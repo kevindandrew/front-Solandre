@@ -1,18 +1,24 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import LoginView from '@/components/delinut/LoginView';
-import AdminLayout from '@/components/delinut/AdminLayout';
+import { Suspense, lazy } from "react";
+import { AuthProvider } from "@/lib/authContext";
+import { Toaster } from "@/components/ui/toaster";
+
+const LandingPage = lazy(() => import("@/components/landing/LandingPage"));
 
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentView, setCurrentView] = useState('dashboard');
-
-  if (!isAuthenticated) {
-    return <LoginView onLogin={() => setIsAuthenticated(true)} />;
-  }
-
   return (
-    <AdminLayout currentView={currentView} setCurrentView={setCurrentView} />
+    <AuthProvider>
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
+          </div>
+        }
+      >
+        <LandingPage />
+      </Suspense>
+      <Toaster />
+    </AuthProvider>
   );
 }

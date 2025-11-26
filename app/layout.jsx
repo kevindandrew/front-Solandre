@@ -1,11 +1,12 @@
-import './globals.css';
-import { Inter } from 'next/font/google';
+import "./globals.css";
+import { Inter } from "next/font/google";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: 'Delinut - Admin Dashboard',
-  description: 'Sistema de gestión para comida saludable',
+  title: "Delinut - Almuerzos Saludables",
+  description:
+    "Ofrecemos almuerzos saludables, con un excelente sabor y directo a tu puerta - La Paz, Bolivia",
 };
 
 export default function RootLayout({ children }) {
