@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Salad } from 'lucide-react';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Salad } from "lucide-react";
 
 export default function LoginView({ onLogin }) {
-  const [email, setEmail] = useState('admin@delinut.com');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("admin@delinut.com");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -17,14 +17,15 @@ export default function LoginView({ onLogin }) {
 
   return (
     <div className="min-h-screen grid md:grid-cols-2">
-      <div className="hidden md:block relative bg-gradient-to-br from-emerald-500 to-emerald-700">
+      <div className="hidden md:block relative bg-linear-to-br from-emerald-500 to-emerald-700">
         <div className="absolute inset-0 bg-black/20" />
         <div className="relative h-full flex items-center justify-center p-12">
           <div className="text-white space-y-6 max-w-md">
             <Salad className="w-16 h-16" />
             <h1 className="text-5xl font-bold">Delinut</h1>
             <p className="text-xl text-emerald-50">
-              Sistema de gestión para comida saludable. Administra menús, pedidos y personal desde un solo lugar.
+              Sistema de gestión para comida saludable. Administra menús,
+              pedidos y personal desde un solo lugar.
             </p>
           </div>
         </div>
