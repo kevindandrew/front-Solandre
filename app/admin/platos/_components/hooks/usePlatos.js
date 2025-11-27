@@ -9,7 +9,9 @@ export function usePlatos() {
 
   const fetchPlatos = async () => {
     const result = await fetchData("/admin/platos");
-    if (result.success) setPlatos(result.data);
+    if (result.success) {
+      setPlatos(result.data);
+    }
   };
 
   const createPlato = async (platoData) => {
@@ -49,7 +51,6 @@ export function usePlatos() {
   };
 
   const deletePlato = async (platoId) => {
-    if (!confirm("¿Estás seguro de eliminar este plato?")) return false;
     const result = await fetchData(`/admin/platos/${platoId}`, "DELETE");
     if (result.success) {
       toast({ title: "Éxito", description: "Plato eliminado correctamente" });

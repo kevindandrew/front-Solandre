@@ -45,7 +45,10 @@ export default function CreateZonaModal({ isOpen, onClose, onZonaCreated }) {
         title: "Éxito",
         description: "Zona creada correctamente",
       });
-      onZonaCreated(result.data);
+      // Llamar a onZonaCreated con la zona creada
+      if (onZonaCreated) {
+        await onZonaCreated(result.data);
+      }
       setNombreZona("");
       onClose();
     } else {

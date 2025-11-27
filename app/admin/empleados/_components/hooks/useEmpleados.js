@@ -36,15 +36,28 @@ export function useZonas() {
   const { fetchData } = useFetch();
 
   const fetchZonas = async () => {
-    // El backend no tiene endpoint para listar todas las zonas
-    // Las zonas se obtienen de los empleados con rol Delivery
-    // Por ahora retornamos array vacío
-    setZonas([]);
+    // Usar el endpoint público del catálogo
+    const result = await fetchData("/catalogo/zonas", "GET");
+
+    if (result.success && result.data) {
+      setZonas(result.data);
+    }
+  };
+
+  const addZona = (nuevaZona) => {
+    setZonas((prevZonas) => {
+      // Verificar si la zona ya existe
+      const exists = prevZonas.some((z) => z.zona_id === nuevaZona.zona_id);
+      if (exists) {
+        return prevZonas;
+      }
+      return [...prevZonas, nuevaZona];
+    });
   };
 
   useEffect(() => {
     fetchZonas();
   }, []);
 
-  return { zonas, refetchZonas: fetchZonas };
+  return { zonas, refetchZonas: fetchZonas, addZona };
 }

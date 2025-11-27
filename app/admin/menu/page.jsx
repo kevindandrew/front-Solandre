@@ -24,7 +24,7 @@ export default function MenuPage() {
     info_nutricional: "",
     cantidad_disponible: 50,
     precio_menu: 0,
-    publicado: false,
+    publicado: true, // ✅ Publicado por defecto
   });
 
   // Calculate dates for the current week based on offset
@@ -98,19 +98,19 @@ export default function MenuPage() {
       info_nutricional: "",
       cantidad_disponible: 50,
       precio_menu: 0,
-      publicado: false,
+      publicado: true, // ✅ Publicado por defecto
     });
     setIsModalOpen(true);
   };
 
   const handleEditClick = (menu) => {
     setIsEdit(true);
-    setCurrentMenuId(menu.menu_id);
+    setCurrentMenuId(menu.menu_dia_id);
     setFormData({
       fecha: menu.fecha,
       plato_principal_id: menu.plato_principal_id,
-      bebida_id: menu.bebida_id,
-      postre_id: menu.postre_id,
+      bebida_id: menu.bebida_id || "none",
+      postre_id: menu.postre_id || "none",
       info_nutricional: menu.info_nutricional || "",
       cantidad_disponible: menu.cantidad_disponible,
       precio_menu: menu.precio_menu,
@@ -131,17 +131,26 @@ export default function MenuPage() {
     const menuData = {
       ...formData,
       plato_principal_id: formData.plato_principal_id || null,
-      bebida_id: formData.bebida_id || null,
-      postre_id: formData.postre_id || null,
+      bebida_id:
+        formData.bebida_id === "none" || !formData.bebida_id
+          ? null
+          : parseInt(formData.bebida_id),
+      postre_id:
+        formData.postre_id === "none" || !formData.postre_id
+          ? null
+          : parseInt(formData.postre_id),
     };
 
+    let success = false;
     if (isEdit && currentMenuId) {
-      await updateMenu(currentMenuId, menuData);
+      success = await updateMenu(currentMenuId, menuData);
     } else {
-      await createMenu(menuData);
+      success = await createMenu(menuData);
     }
 
-    setIsModalOpen(false);
+    if (success) {
+      setIsModalOpen(false);
+    }
   };
 
   const handleWeekChange = (direction) => {

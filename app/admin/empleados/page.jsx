@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useEmpleados, useZonas } from "./_components/hooks/useEmpleados";
 import { useEmpleadosActions } from "./_components/hooks/useEmpleadosActions";
 import EmpleadosHeader from "./_components/EmpleadosHeader";
@@ -13,23 +13,9 @@ import { Badge } from "@/components/ui/badge";
 
 export default function EmpleadosPage() {
   const { empleados, loading, refetch } = useEmpleados();
-  const { zonas: zonasApi, refetchZonas } = useZonas();
+  const { zonas, refetchZonas, addZona } = useZonas();
   const { createEmpleado, updateEmpleado, deleteEmpleado } =
     useEmpleadosActions(refetch);
-
-  // Extraer zonas únicas de los empleados existentes
-  const zonas = useMemo(() => {
-    const zonasMap = new Map();
-    empleados.forEach((emp) => {
-      if (emp.zona_reparto_id && emp.zona_nombre) {
-        zonasMap.set(emp.zona_reparto_id, {
-          zona_id: emp.zona_reparto_id,
-          nombre_zona: emp.zona_nombre,
-        });
-      }
-    });
-    return Array.from(zonasMap.values());
-  }, [empleados]);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -184,6 +170,7 @@ export default function EmpleadosPage() {
           setFormData={setFormData}
           zonas={zonas}
           onRefreshZonas={refetchZonas}
+          onAddZona={addZona}
           isEdit={false}
         />
 
@@ -195,6 +182,7 @@ export default function EmpleadosPage() {
           setFormData={setFormData}
           zonas={zonas}
           onRefreshZonas={refetchZonas}
+          onAddZona={addZona}
           isEdit={true}
         />
 

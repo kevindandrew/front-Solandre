@@ -14,11 +14,14 @@ import {
   Edit2,
   ChefHat,
   ArrowLeft,
+  Menu,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import EditProfileModal from "./EditProfileModal";
 
 const navigation = [
@@ -47,7 +50,7 @@ const navigation = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen = true, onClose, onToggle }) {
   const router = useRouter();
   const pathname = usePathname();
   const [showEditModal, setShowEditModal] = useState(false);
@@ -83,84 +86,152 @@ export default function Sidebar() {
     setShowEditModal(true);
   };
 
+  const handleNavigation = (href) => {
+    router.push(href);
+    if (window.innerWidth < 768 && onClose) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col">
-      <div className="flex flex-col flex-grow bg-orange-50 border-r border-orange-100">
-        <div className="flex items-center gap-3 px-6 py-6 border-b border-orange-200 bg-white">
-          <Image
-            src="/LogoDelinut.png"
-            alt="Delinut"
-            width={120}
-            height={40}
-            className="object-contain"
-          />
-        </div>
+    <>
+      {/* Overlay para móvil */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={onClose}
+        />
+      )}
 
-        <nav className="flex-1 px-4 py-6 space-y-1">
-          <button
-            onClick={() => router.push("/")}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-100 transition-colors mb-3 border-b border-orange-200 pb-4"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Regresar al Inicio
-          </button>
-
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-
-            return (
-              <button
-                key={item.id}
-                onClick={() => router.push(item.href)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-orange-500 text-white hover:bg-orange-600"
-                    : "text-gray-700 hover:bg-orange-100"
-                )}
+      {/* Sidebar */}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 ease-in-out ${
+          isOpen
+            ? "w-64 translate-x-0"
+            : "-translate-x-full md:translate-x-0 md:w-20"
+        }`}
+      >
+        <div className="flex flex-col h-full bg-orange-50 border-r border-orange-100">
+          {/* Header con logo y botón toggle */}
+          <div className="flex items-center justify-between px-6 py-6 border-b border-orange-200 bg-white">
+            {isOpen ? (
+              <>
+                <Image
+                  src="/LogoDelinut.png"
+                  alt="Delinut"
+                  width={120}
+                  height={40}
+                  style={{ width: "auto", height: "auto" }}
+                  className="object-contain"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onToggle}
+                  className="hidden md:flex hover:bg-orange-50"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggle}
+                className="hidden md:flex hover:bg-orange-50 mx-auto"
               >
-                <Icon className="w-5 h-5" />
-                {item.name}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="p-4 border-t border-orange-200 space-y-3">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-semibold text-sm">
-                {initials}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {userName}
-              </p>
-              <p className="text-xs text-gray-600 truncate">{userEmail}</p>
-            </div>
-            <button
-              onClick={handleEditProfile}
-              className="p-2 hover:bg-orange-100 rounded-lg transition-colors"
-              title="Editar perfil"
-            >
-              <Edit2 className="w-4 h-4 text-gray-600" />
-            </button>
+                <Menu className="h-5 w-5" />
+              </Button>
+            )}
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            Cerrar Sesión
-          </button>
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            <button
+              onClick={() => handleNavigation("/")}
+              className={cn(
+                "w-full flex items-center gap-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-100 transition-colors mb-3 border-b border-orange-200 pb-4",
+                isOpen ? "px-4 py-3" : "px-2 py-3 justify-center"
+              )}
+              title={!isOpen ? "Regresar al Inicio" : ""}
+            >
+              <ArrowLeft className="w-5 h-5 shrink-0" />
+              {isOpen && <span>Regresar al Inicio</span>}
+            </button>
+
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavigation(item.href)}
+                  className={cn(
+                    "w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
+                    isOpen ? "px-4 py-3" : "px-2 py-3 justify-center",
+                    isActive
+                      ? "bg-orange-500 text-white hover:bg-orange-600"
+                      : "text-gray-700 hover:bg-orange-100"
+                  )}
+                  title={!isOpen ? item.name : ""}
+                >
+                  <Icon className="w-5 h-5 shrink-0" />
+                  {isOpen && <span>{item.name}</span>}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="p-4 border-t border-orange-200 space-y-3">
+            <div
+              className={cn(
+                "flex items-center gap-3",
+                isOpen ? "px-2" : "justify-center"
+              )}
+            >
+              <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center shrink-0">
+                <span className="text-white font-semibold text-sm">
+                  {initials}
+                </span>
+              </div>
+              {isOpen && (
+                <>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {userName}
+                    </p>
+                    <p className="text-xs text-gray-600 truncate">
+                      {userEmail}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleEditProfile}
+                    className="p-2 hover:bg-orange-100 rounded-lg transition-colors"
+                    title="Editar perfil"
+                  >
+                    <Edit2 className="w-4 h-4 text-gray-600" />
+                  </button>
+                </>
+              )}
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className={cn(
+                "w-full flex items-center gap-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors",
+                isOpen ? "px-4 py-2.5" : "px-2 py-2.5 justify-center"
+              )}
+              title={!isOpen ? "Cerrar Sesión" : ""}
+            >
+              <LogOut className="w-5 h-5 shrink-0" />
+              {isOpen && <span>Cerrar Sesión</span>}
+            </button>
+          </div>
         </div>
+        {showEditModal && (
+          <EditProfileModal onClose={() => setShowEditModal(false)} />
+        )}
       </div>
-      {showEditModal && (
-        <EditProfileModal onClose={() => setShowEditModal(false)} />
-      )}
-    </div>
+    </>
   );
 }

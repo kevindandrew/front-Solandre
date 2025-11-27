@@ -2,14 +2,23 @@
 
 import { Suspense, lazy } from "react";
 import { useState } from "react";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Eye, Pencil, Trash2, ImageOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { usePlatos } from "./_components/hooks/usePlatos";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-const GenericTable = lazy(() => import("@/components/shared/GenericTable"));
 const PlatoFormModal = lazy(() => import("./_components/PlatoFormModal"));
 
 export default function PlatosPage() {
@@ -20,11 +29,13 @@ export default function PlatosPage() {
   const [isViewMode, setIsViewMode] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentPlatoId, setCurrentPlatoId] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [platoToDelete, setPlatoToDelete] = useState(null);
   const [formData, setFormData] = useState({
     nombre: "",
-    tipo: "",
+    tipo: "Principal",
     descripcion: "",
-    imagen_url: null,
+    imagen_url: "",
     ingredientes: [],
   });
 
@@ -32,24 +43,42 @@ export default function PlatosPage() {
     setIsViewMode(viewMode);
     setIsEdit(editMode);
     setCurrentPlatoId(plato?.plato_id || null);
-    setFormData(
-      plato
-        ? {
-            nombre: plato.nombre,
-            descripcion: plato.descripcion || "",
-            tipo: plato.tipo,
-            imagen_url: plato.imagen_url || null,
-            ingredientes: plato.ingredientes || [],
-          }
-        : {
-            nombre: "",
-            descripcion: "",
-            tipo: "",
-            imagen_url: null,
-            ingredientes: [],
-          }
-    );
+
+    if (plato) {
+      // Extraer la URL correcta si viene en formato objeto
+      const cleanImageUrl = extractImageUrl(plato.imagen_url) || "";
+
+      setFormData({
+        nombre: plato.nombre,
+        descripcion: plato.descripcion || "",
+        tipo: plato.tipo,
+        imagen_url: cleanImageUrl,
+        ingredientes: plato.ingredientes || [],
+      });
+    } else {
+      setFormData({
+        nombre: "",
+        descripcion: "",
+        tipo: "Principal",
+        imagen_url: "",
+        ingredientes: [],
+      });
+    }
+
     setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = (plato) => {
+    setPlatoToDelete(plato);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (platoToDelete) {
+      await deletePlato(platoToDelete.plato_id);
+      setDeleteDialogOpen(false);
+      setPlatoToDelete(null);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -72,10 +101,12 @@ export default function PlatosPage() {
       return;
     }
 
-    // Convertir descripción vacía a null para el backend
     const dataToSend = {
-      ...formData,
-      descripcion: formData.descripcion.trim() || null,
+      nombre: formData.nombre.trim(),
+      tipo: formData.tipo,
+      descripcion: formData.descripcion.trim() || "",
+      imagen_url: formData.imagen_url || "",
+      ingredientes: formData.ingredientes || [],
     };
 
     const success = isEdit
@@ -87,37 +118,55 @@ export default function PlatosPage() {
   const filteredPlatos = platos.filter(
     (plato) =>
       plato.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      plato.tipo.toLowerCase().includes(searchTerm.toLowerCase())
+      plato.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (plato.descripcion &&
+        plato.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const platosColumns = [
-    {
-      header: "Nº",
-      key: "index",
-      render: (_, index) => index + 1,
-    },
-    {
-      header: "Nombre",
-      key: "nombre",
-      cellClassName: "font-medium",
-    },
-    {
-      header: "Tipo",
-      key: "tipo",
-      render: (plato) => {
-        const colors = {
-          Principal: "bg-orange-100 text-orange-800",
-          Bebida: "bg-blue-100 text-blue-800",
-          Postre: "bg-purple-100 text-purple-800",
-        };
-        return (
-          <Badge className={colors[plato.tipo] || "bg-gray-100 text-gray-800"}>
-            {plato.tipo}
-          </Badge>
-        );
-      },
-    },
-  ];
+  // Agrupar platos por tipo
+  const platosPorTipo = {
+    Principal: filteredPlatos.filter((p) => p.tipo === "Principal"),
+    Acompanamiento: filteredPlatos.filter((p) => p.tipo === "Acompanamiento"),
+    Postre: filteredPlatos.filter((p) => p.tipo === "Postre"),
+    Bebida: filteredPlatos.filter((p) => p.tipo === "Bebida"),
+  };
+
+  const getTipoColor = (tipo) => {
+    const colors = {
+      Principal: "bg-orange-100 text-orange-800 border-orange-200",
+      Acompanamiento: "bg-green-100 text-green-800 border-green-200",
+      Bebida: "bg-blue-100 text-blue-800 border-blue-200",
+      Postre: "bg-purple-100 text-purple-800 border-purple-200",
+    };
+    return colors[tipo] || "bg-gray-100 text-gray-800 border-gray-200";
+  };
+
+  // Función helper para extraer URL de imagen
+  const extractImageUrl = (imagenUrl) => {
+    if (!imagenUrl) return null;
+
+    // Si ya es una URL válida, devolverla
+    if (imagenUrl.startsWith("http")) return imagenUrl;
+
+    try {
+      // Intentar parsear como JSON directamente
+      const parsed = JSON.parse(imagenUrl);
+      if (parsed.url) return parsed.url;
+    } catch (e) {
+      // No es JSON válido, continuar con otras opciones
+    }
+
+    // Si contiene el formato {url:...,public_id:...}, extraer la URL
+    if (imagenUrl.includes("{url:") || imagenUrl.includes('{"url"')) {
+      // Intentar con regex para extraer la URL
+      const match = imagenUrl.match(/"url":"([^"]+)"|url:([^,}]+)/);
+      if (match) {
+        return match[1] || match[2]?.trim();
+      }
+    }
+
+    return null;
+  };
 
   return (
     <div className="space-y-6">
@@ -150,20 +199,440 @@ export default function PlatosPage() {
         </div>
 
         <Suspense
-          fallback={<div className="text-center py-8">Cargando tabla...</div>}
+          fallback={<div className="text-center py-8">Cargando platos...</div>}
         >
-          <GenericTable
-            data={filteredPlatos.map((p, idx) => ({
-              ...p,
-              index: idx,
-              id: p.plato_id,
-            }))}
-            columns={platosColumns}
-            onView={(plato) => openModal(plato, true, false)}
-            onEdit={(plato) => openModal(plato, false, true)}
-            onDelete={(plato) => deletePlato(plato.plato_id)}
-            emptyMessage="No hay platos registrados"
-          />
+          {filteredPlatos.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-lg font-medium">No hay platos registrados</p>
+              <p className="text-sm mt-1">Crea tu primer plato para comenzar</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {/* Sección: Platos Principales */}
+              {platosPorTipo.Principal.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Platos Principales
+                    </h2>
+                    <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+                      {platosPorTipo.Principal.length}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {platosPorTipo.Principal.map((plato) => {
+                      const imageUrl = extractImageUrl(plato.imagen_url);
+
+                      return (
+                        <div
+                          key={plato.plato_id}
+                          className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200"
+                        >
+                          {/* Imagen */}
+                          <div className="relative h-48 bg-gray-100">
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={plato.nombre}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  console.error(
+                                    "Error cargando imagen:",
+                                    imageUrl
+                                  );
+                                  e.target.style.display = "none";
+                                  e.target.nextElementSibling.style.display =
+                                    "flex";
+                                }}
+                              />
+                            ) : null}
+                            {!imageUrl && (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ImageOff className="h-12 w-12 text-gray-300" />
+                              </div>
+                            )}
+                            <div
+                              className="w-full h-full flex items-center justify-center"
+                              style={{ display: imageUrl ? "none" : "none" }}
+                            >
+                              <ImageOff className="h-12 w-12 text-gray-300" />
+                            </div>
+                            <div className="absolute top-2 right-2">
+                              <Badge className={getTipoColor(plato.tipo)}>
+                                {plato.tipo}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Contenido */}
+                          <div className="p-4">
+                            <div className="mb-3">
+                              <h3 className="font-bold text-gray-900 text-lg mb-1 truncate">
+                                {plato.nombre}
+                              </h3>
+                              {plato.descripcion && (
+                                <p className="text-sm text-gray-600 line-clamp-2">
+                                  {plato.descripcion}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Acciones */}
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => openModal(plato, true, false)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Ver
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => openModal(plato, false, true)}
+                              >
+                                <Pencil className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteClick(plato)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Sección: Acompañamientos */}
+              {platosPorTipo.Acompanamiento.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Acompañamientos
+                    </h2>
+                    <Badge className="bg-green-100 text-green-800 border-green-200">
+                      {platosPorTipo.Acompanamiento.length}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {platosPorTipo.Acompanamiento.map((plato) => {
+                      const imageUrl = extractImageUrl(plato.imagen_url);
+
+                      return (
+                        <div
+                          key={plato.plato_id}
+                          className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200"
+                        >
+                          {/* Imagen */}
+                          <div className="relative h-48 bg-gray-100">
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={plato.nombre}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  console.error(
+                                    "Error cargando imagen:",
+                                    imageUrl
+                                  );
+                                  e.target.style.display = "none";
+                                  e.target.nextElementSibling.style.display =
+                                    "flex";
+                                }}
+                              />
+                            ) : null}
+                            {!imageUrl && (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ImageOff className="h-12 w-12 text-gray-300" />
+                              </div>
+                            )}
+                            <div
+                              className="w-full h-full flex items-center justify-center"
+                              style={{ display: imageUrl ? "none" : "none" }}
+                            >
+                              <ImageOff className="h-12 w-12 text-gray-300" />
+                            </div>
+                            <div className="absolute top-2 right-2">
+                              <Badge className={getTipoColor(plato.tipo)}>
+                                {plato.tipo}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Contenido */}
+                          <div className="p-4">
+                            <div className="mb-3">
+                              <h3 className="font-bold text-gray-900 text-lg mb-1 truncate">
+                                {plato.nombre}
+                              </h3>
+                              {plato.descripcion && (
+                                <p className="text-sm text-gray-600 line-clamp-2">
+                                  {plato.descripcion}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Acciones */}
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => openModal(plato, true, false)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Ver
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => openModal(plato, false, true)}
+                              >
+                                <Pencil className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteClick(plato)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Sección: Postres */}
+              {platosPorTipo.Postre.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Postres
+                    </h2>
+                    <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                      {platosPorTipo.Postre.length}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {platosPorTipo.Postre.map((plato) => {
+                      const imageUrl = extractImageUrl(plato.imagen_url);
+
+                      return (
+                        <div
+                          key={plato.plato_id}
+                          className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200"
+                        >
+                          {/* Imagen */}
+                          <div className="relative h-48 bg-gray-100">
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={plato.nombre}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  console.error(
+                                    "Error cargando imagen:",
+                                    imageUrl
+                                  );
+                                  e.target.style.display = "none";
+                                  e.target.nextElementSibling.style.display =
+                                    "flex";
+                                }}
+                              />
+                            ) : null}
+                            {!imageUrl && (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ImageOff className="h-12 w-12 text-gray-300" />
+                              </div>
+                            )}
+                            <div
+                              className="w-full h-full flex items-center justify-center"
+                              style={{ display: imageUrl ? "none" : "none" }}
+                            >
+                              <ImageOff className="h-12 w-12 text-gray-300" />
+                            </div>
+                            <div className="absolute top-2 right-2">
+                              <Badge className={getTipoColor(plato.tipo)}>
+                                {plato.tipo}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Contenido */}
+                          <div className="p-4">
+                            <div className="mb-3">
+                              <h3 className="font-bold text-gray-900 text-lg mb-1 truncate">
+                                {plato.nombre}
+                              </h3>
+                              {plato.descripcion && (
+                                <p className="text-sm text-gray-600 line-clamp-2">
+                                  {plato.descripcion}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Acciones */}
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => openModal(plato, true, false)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Ver
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => openModal(plato, false, true)}
+                              >
+                                <Pencil className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteClick(plato)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Sección: Bebidas */}
+              {platosPorTipo.Bebida.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Bebidas
+                    </h2>
+                    <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                      {platosPorTipo.Bebida.length}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {platosPorTipo.Bebida.map((plato) => {
+                      const imageUrl = extractImageUrl(plato.imagen_url);
+
+                      return (
+                        <div
+                          key={plato.plato_id}
+                          className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200"
+                        >
+                          {/* Imagen */}
+                          <div className="relative h-48 bg-gray-100">
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={plato.nombre}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  console.error(
+                                    "Error cargando imagen:",
+                                    imageUrl
+                                  );
+                                  e.target.style.display = "none";
+                                  e.target.nextElementSibling.style.display =
+                                    "flex";
+                                }}
+                              />
+                            ) : null}
+                            {!imageUrl && (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ImageOff className="h-12 w-12 text-gray-300" />
+                              </div>
+                            )}
+                            <div
+                              className="w-full h-full flex items-center justify-center"
+                              style={{ display: imageUrl ? "none" : "none" }}
+                            >
+                              <ImageOff className="h-12 w-12 text-gray-300" />
+                            </div>
+                            <div className="absolute top-2 right-2">
+                              <Badge className={getTipoColor(plato.tipo)}>
+                                {plato.tipo}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Contenido */}
+                          <div className="p-4">
+                            <div className="mb-3">
+                              <h3 className="font-bold text-gray-900 text-lg mb-1 truncate">
+                                {plato.nombre}
+                              </h3>
+                              {plato.descripcion && (
+                                <p className="text-sm text-gray-600 line-clamp-2">
+                                  {plato.descripcion}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Acciones */}
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => openModal(plato, true, false)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Ver
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => openModal(plato, false, true)}
+                              >
+                                <Pencil className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteClick(plato)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </Suspense>
       </div>
 
@@ -178,6 +647,28 @@ export default function PlatosPage() {
           isViewMode={isViewMode}
         />
       </Suspense>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará el plato "{platoToDelete?.nombre}"
+              permanentemente. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

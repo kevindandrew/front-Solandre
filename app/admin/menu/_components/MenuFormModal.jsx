@@ -50,7 +50,7 @@ export default function MenuFormModal({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="fecha" className="text-gray-600">
-                  Fecha
+                  Fecha del Menú
                 </Label>
                 <Input
                   id="fecha"
@@ -60,6 +60,7 @@ export default function MenuFormModal({
                     setFormData({ ...formData, fecha: e.target.value })
                   }
                   className="text-gray-700"
+                  disabled={isEdit}
                   required
                 />
               </div>
@@ -118,21 +119,24 @@ export default function MenuFormModal({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bebida" className="text-gray-600">
-                  Bebida
+                  Bebida (Opcional)
                 </Label>
                 <Select
-                  value={formData.bebida_id ? String(formData.bebida_id) : ""}
-                  onValueChange={(value) =>
+                  value={
+                    formData.bebida_id ? String(formData.bebida_id) : "none"
+                  }
+                  onValueChange={(value) => {
                     setFormData({
                       ...formData,
-                      bebida_id: parseInt(value),
-                    })
-                  }
+                      bebida_id: value === "none" ? null : parseInt(value),
+                    });
+                  }}
                 >
                   <SelectTrigger className="text-gray-700">
-                    <SelectValue placeholder="Seleccionar bebida" />
+                    <SelectValue placeholder="Seleccionar bebida (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Sin bebida</SelectItem>
                     {bebidas.map((plato) => (
                       <SelectItem
                         key={plato.plato_id}
@@ -146,21 +150,24 @@ export default function MenuFormModal({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="postre" className="text-gray-600">
-                  Postre
+                  Postre (Opcional)
                 </Label>
                 <Select
-                  value={formData.postre_id ? String(formData.postre_id) : ""}
-                  onValueChange={(value) =>
+                  value={
+                    formData.postre_id ? String(formData.postre_id) : "none"
+                  }
+                  onValueChange={(value) => {
                     setFormData({
                       ...formData,
-                      postre_id: parseInt(value),
-                    })
-                  }
+                      postre_id: value === "none" ? null : parseInt(value),
+                    });
+                  }}
                 >
                   <SelectTrigger className="text-gray-700">
-                    <SelectValue placeholder="Seleccionar postre" />
+                    <SelectValue placeholder="Seleccionar postre (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Sin postre</SelectItem>
                     {postres.map((plato) => (
                       <SelectItem
                         key={plato.plato_id}
@@ -206,7 +213,7 @@ export default function MenuFormModal({
                     })
                   }
                   placeholder="Calorías, proteínas, carbohidratos..."
-                  className="text-gray-700 min-h-[80px]"
+                  className="text-gray-700 min-h-20"
                 />
               </div>
               <div className="col-span-2 flex items-center justify-between p-4 bg-gray-50 rounded-lg">

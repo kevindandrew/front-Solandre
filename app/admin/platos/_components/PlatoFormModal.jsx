@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Upload, X, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Upload, X, Loader2, Plus, Trash2 } from "lucide-react";
 import Cookies from "js-cookie";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useFetch } from "@/hooks/useFetch";
 
@@ -35,8 +36,77 @@ export default function PlatoFormModal({
   isViewMode,
 }) {
   const [uploading, setUploading] = useState(false);
+  const [inventario, setInventario] = useState([]);
+  const [loadingInventario, setLoadingInventario] = useState(false);
   const { toast } = useToast();
   const { fetchData } = useFetch();
+
+  // Cargar inventario cuando se abre el modal
+  useEffect(() => {
+    if (isOpen && !isViewMode) {
+      fetchInventario();
+    }
+  }, [isOpen]);
+
+  const fetchInventario = async () => {
+    setLoadingInventario(true);
+    try {
+      const token = Cookies.get("token");
+      const response = await fetch(
+        "https://backend-solandre.onrender.com/inventario",
+        {
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setInventario(data);
+      }
+    } catch (error) {
+      console.error("Error al cargar inventario:", error);
+    } finally {
+      setLoadingInventario(false);
+    }
+  };
+
+  const agregarIngrediente = () => {
+    const ingredientesActuales = formData.ingredientes || [];
+    setFormData({
+      ...formData,
+      ingredientes: [
+        ...ingredientesActuales,
+        { ingrediente_id: "", cantidad: 0, unidad: "" },
+      ],
+    });
+  };
+
+  const eliminarIngrediente = (index) => {
+    const ingredientesActuales = [...(formData.ingredientes || [])];
+    ingredientesActuales.splice(index, 1);
+    setFormData({ ...formData, ingredientes: ingredientesActuales });
+  };
+
+  const actualizarIngrediente = (index, campo, valor) => {
+    const ingredientesActuales = [...(formData.ingredientes || [])];
+
+    if (campo === "ingrediente_id") {
+      const ingredienteSeleccionado = inventario.find(
+        (ing) => ing.ingrediente_id === parseInt(valor)
+      );
+      ingredientesActuales[index] = {
+        ...ingredientesActuales[index],
+        ingrediente_id: valor,
+        unidad: ingredienteSeleccionado?.unidad || "kg",
+      };
+    } else {
+      ingredientesActuales[index][campo] = valor;
+    }
+
+    setFormData({ ...formData, ingredientes: ingredientesActuales });
+  };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -68,19 +138,61 @@ export default function PlatoFormModal({
         }
       );
 
-      if (!response.ok) throw new Error("Error al subir imagen");
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error al subir imagen:", errorText);
+        throw new Error("Error al subir imagen");
+      }
 
-      const data = await response.json();
-      setFormData({ ...formData, imagen_url: data.imagen_url });
+      // La API devuelve un string que puede ser una URL directa o un objeto JSON
+      let responseText = await response.text();
+
+      // Remover comillas externas si existen
+      responseText = responseText.replace(/^["']|["']$/g, "");
+
+      let finalUrl = responseText;
+
+      // Intentar parsear como JSON
+      try {
+        const parsed = JSON.parse(responseText);
+        // Si es un objeto con propiedad 'url', extraerla
+        if (parsed.url) {
+          finalUrl = parsed.url;
+        }
+      } catch (e) {
+        // Si no es JSON válido, verificar si es un string con formato de objeto
+
+        // Si ya es una URL directa (empieza con http)
+        if (responseText.startsWith("http")) {
+          finalUrl = responseText;
+        }
+        // Si tiene formato {url:...,public_id:...} sin comillas
+        else if (responseText.includes("{url:")) {
+          const match = responseText.match(/url:([^,}]+)/);
+          if (match && match[1]) {
+            finalUrl = match[1].trim();
+          }
+        }
+        // Si tiene formato con comillas {"url":"...","public_id":"..."}
+        else if (responseText.includes('{"url"')) {
+          const match = responseText.match(/"url":"([^"]+)"/);
+          if (match && match[1]) {
+            finalUrl = match[1];
+          }
+        }
+      }
+
+      setFormData({ ...formData, imagen_url: finalUrl });
       toast({
         title: "Éxito",
         description: "Imagen subida correctamente",
       });
     } catch (error) {
+      console.error("Error completo:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo subir la imagen",
+        description: error.message || "No se pudo subir la imagen",
       });
     } finally {
       setUploading(false);
@@ -88,7 +200,7 @@ export default function PlatoFormModal({
   };
 
   const removeImage = () => {
-    setFormData({ ...formData, imagen_url: null });
+    setFormData({ ...formData, imagen_url: "" });
   };
 
   return (
@@ -199,9 +311,138 @@ export default function PlatoFormModal({
                   setFormData({ ...formData, descripcion: e.target.value })
                 }
                 placeholder="Describe el plato..."
-                className="min-h-[80px]"
+                className="min-h-20"
                 disabled={isViewMode}
               />
+            </div>
+
+            {/* Sección de Ingredientes */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Ingredientes</Label>
+                {!isViewMode && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={agregarIngrediente}
+                    className="h-8"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Agregar
+                  </Button>
+                )}
+              </div>
+
+              {loadingInventario ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  <span className="ml-2 text-sm text-gray-600">
+                    Cargando inventario...
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {(formData.ingredientes || []).length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      No hay ingredientes agregados
+                    </p>
+                  ) : (
+                    (formData.ingredientes || []).map((ingrediente, index) => (
+                      <div
+                        key={index}
+                        className="flex gap-2 items-end p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <Label className="text-xs">Ingrediente</Label>
+                          <Select
+                            value={String(ingrediente.ingrediente_id)}
+                            onValueChange={(value) =>
+                              actualizarIngrediente(
+                                index,
+                                "ingrediente_id",
+                                value
+                              )
+                            }
+                            disabled={isViewMode}
+                          >
+                            <SelectTrigger className="h-9">
+                              <SelectValue placeholder="Seleccionar" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white">
+                              {inventario.map((inv) => (
+                                <SelectItem
+                                  key={inv.ingrediente_id}
+                                  value={String(inv.ingrediente_id)}
+                                >
+                                  {inv.nombre} ({inv.stock_actual} {inv.unidad})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="w-24">
+                          <Label className="text-xs">Cantidad</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={ingrediente.cantidad}
+                            onChange={(e) =>
+                              actualizarIngrediente(
+                                index,
+                                "cantidad",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
+                            disabled={isViewMode}
+                            className="h-9"
+                          />
+                        </div>
+
+                        <div className="w-16">
+                          <Label className="text-xs">Unidad</Label>
+                          <Input
+                            value={ingrediente.unidad}
+                            disabled
+                            className="h-9 bg-gray-100"
+                          />
+                        </div>
+
+                        {!isViewMode && (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => eliminarIngrediente(index)}
+                            className="h-9 w-9 shrink-0"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {isViewMode && (formData.ingredientes || []).length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(formData.ingredientes || []).map((ing, idx) => {
+                    const ingredienteInfo = inventario.find(
+                      (inv) =>
+                        inv.ingrediente_id === parseInt(ing.ingrediente_id)
+                    );
+                    return (
+                      <Badge key={idx} variant="secondary" className="text-xs">
+                        {ingredienteInfo?.nombre || `ID: ${ing.ingrediente_id}`}{" "}
+                        - {ing.cantidad} {ing.unidad}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

@@ -54,6 +54,7 @@ export default function SobreNosotros() {
                 src="/plato4.jpg"
                 alt="Delinut - Almuerzos Saludables"
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
               />
             </div>

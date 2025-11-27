@@ -30,6 +30,7 @@ export default function EmpleadoFormModal({
   setFormData,
   zonas,
   onRefreshZonas,
+  onAddZona,
   isEdit = false,
 }) {
   const [showCreateZona, setShowCreateZona] = useState(false);
@@ -61,7 +62,13 @@ export default function EmpleadoFormModal({
   };
 
   const handleZonaCreated = async (newZona) => {
+    // Agregar la zona inmediatamente al estado
+    if (onAddZona) {
+      onAddZona(newZona);
+    }
+    // Refrescar para obtener datos actualizados del servidor
     await onRefreshZonas();
+    // Seleccionar la zona recién creada
     setFormData({
       ...formData,
       zona_reparto_id: newZona.zona_id,

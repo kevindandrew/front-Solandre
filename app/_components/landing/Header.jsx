@@ -88,7 +88,8 @@ export default function Header() {
                   alt="Delinut Logo"
                   width={110}
                   height={50}
-                  className="object-contain"
+                  style={{ width: "auto", height: "auto" }}
+                  className="cursor-pointer"
                 />
               </Link>
             </div>
