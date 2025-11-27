@@ -33,6 +33,7 @@ export function useMenu() {
         postre_nombre: platosMap[menu.postre_id]?.nombre || null,
       }));
 
+      console.log("🔄 Menús actualizados:", enrichedMenus);
       setMenus(enrichedMenus);
     } else {
       toast({

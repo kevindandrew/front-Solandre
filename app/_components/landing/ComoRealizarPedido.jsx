@@ -1,10 +1,36 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Phone, Clock, MapPin } from "lucide-react";
 import Image from "next/image";
 
 export default function ComoRealizarPedido() {
-  const zonas = ["AV. ARCE", "6 DE AGOSTO", "PRADO", "CAMACHO"];
+  const [zonas, setZonas] = useState([]);
+
+  useEffect(() => {
+    fetchZonas();
+  }, []);
+
+  const fetchZonas = async () => {
+    try {
+      const response = await fetch(
+        "https://backend-solandre.onrender.com/catalogo/zonas"
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setZonas(data);
+      }
+    } catch (error) {
+      console.error("Error al cargar zonas:", error);
+      // Fallback a zonas por defecto si falla
+      setZonas([
+        { nombre_zona: "AV. ARCE" },
+        { nombre_zona: "6 DE AGOSTO" },
+        { nombre_zona: "PRADO" },
+        { nombre_zona: "CAMACHO" },
+      ]);
+    }
+  };
 
   const incluye = [
     { icon: "🍽️", text: "SEGUNDO" },
@@ -15,7 +41,7 @@ export default function ComoRealizarPedido() {
   ];
 
   return (
-    <section className="py-16 bg-gradient-to-b from-white to-blue-50">
+    <section className="py-16 bg-linear-to-b from-white to-blue-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
@@ -85,7 +111,7 @@ export default function ComoRealizarPedido() {
                     key={index}
                     className="text-sm font-semibold text-gray-700"
                   >
-                    {zona}
+                    {zona.nombre_zona}
                   </div>
                 ))}
               </div>
@@ -94,7 +120,7 @@ export default function ComoRealizarPedido() {
         </div>
 
         {/* Tu pedido incluye */}
-        <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl p-8 shadow-xl">
+        <div className="bg-linear-to-r from-blue-500 to-cyan-500 rounded-2xl p-8 shadow-xl">
           <h3 className="text-3xl font-bold text-white text-center mb-8">
             TU PEDIDO INCLUYE
           </h3>
@@ -118,17 +144,18 @@ export default function ComoRealizarPedido() {
             </div>
 
             {/* Imagen del plato */}
-            <div className="relative w-56 h-56 flex-shrink-0">
+            <div className="relative w-56 h-56 shrink-0">
               <Image
                 src="/plato3.jpg"
                 alt="Plato de comida"
                 fill
+                sizes="224px"
                 className="rounded-full object-cover shadow-2xl border-4 border-white"
               />
             </div>
 
             {/* Ubicación */}
-            <div className="bg-white rounded-xl p-6 shadow-lg flex-shrink-0">
+            <div className="bg-white rounded-xl p-6 shadow-lg shrink-0">
               <div className="text-center">
                 <p className="text-3xl font-bold text-blue-600">LA PAZ</p>
                 <p className="text-xl text-gray-600">BOLIVIA</p>

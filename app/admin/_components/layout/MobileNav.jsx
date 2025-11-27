@@ -20,7 +20,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import EditProfileModal from "./EditProfileModal";
 
@@ -92,6 +98,7 @@ export default function MobileNav() {
           alt="Delinut"
           width={100}
           height={30}
+          style={{ width: "auto", height: "auto" }}
           className="object-contain"
         />
 
@@ -102,6 +109,11 @@ export default function MobileNav() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-72 p-0 bg-orange-50">
+            <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
+            <SheetDescription className="sr-only">
+              Menú principal para navegar entre las diferentes secciones del
+              panel de administración
+            </SheetDescription>
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-3 px-6 py-6 border-b border-orange-200 bg-white">
                 <Image
@@ -109,6 +121,7 @@ export default function MobileNav() {
                   alt="Delinut"
                   width={120}
                   height={40}
+                  style={{ width: "auto", height: "auto" }}
                   className="object-contain"
                 />
               </div>
@@ -149,7 +162,7 @@ export default function MobileNav() {
 
               <div className="p-4 border-t border-orange-200 space-y-3">
                 <div className="flex items-center gap-3 px-2">
-                  <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center shrink-0">
                     <span className="text-white font-semibold text-sm">
                       {initials}
                     </span>

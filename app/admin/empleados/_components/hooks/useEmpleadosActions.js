@@ -33,12 +33,20 @@ export function useEmpleadosActions(refetch) {
   const updateEmpleado = async (empleadoId, formData) => {
     const payload = {
       email: formData.email,
-      password: formData.password || "sin_cambio_password_temp_123",
       nombre_completo: formData.nombre_completo,
       telefono: formData.telefono,
       rol_id: formData.rol_id,
-      zona_reparto_id: formData.zona_reparto_id || 0,
     };
+
+    // Solo agregar password si se proporcionó uno nuevo
+    if (formData.password && formData.password.trim() !== "") {
+      payload.password = formData.password;
+    }
+
+    // Solo agregar zona_reparto_id si el rol es Delivery (rol_id = 3)
+    if (formData.rol_id === 3 && formData.zona_reparto_id) {
+      payload.zona_reparto_id = formData.zona_reparto_id;
+    }
 
     const result = await fetchData(
       `/admin/empleados/${empleadoId}`,
@@ -86,7 +94,7 @@ export function useEmpleadosActions(refetch) {
   const assignZona = async (empleadoId, zonaData) => {
     const result = await fetchData(
       `/admin/empleados/${empleadoId}/zona`,
-      "PUT",
+      "PATCH",
       zonaData
     );
 

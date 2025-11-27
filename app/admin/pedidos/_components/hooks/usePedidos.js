@@ -109,6 +109,31 @@ export function usePedidos() {
     }
   };
 
+  const cambiarEstado = async (pedidoId, nuevoEstado) => {
+    const result = await fetchData(
+      `/admin/pedidos/${pedidoId}/estado`,
+      "PATCH",
+      { estado: nuevoEstado }
+    );
+
+    if (result.success) {
+      toast({
+        title: "Éxito",
+        description: `Pedido actualizado a: ${nuevoEstado}`,
+      });
+      // Recargar pedidos después del cambio
+      await fetchPedidos();
+      return true;
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: result.error || "No se pudo actualizar el estado",
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchPedidos();
   }, []);
@@ -120,5 +145,6 @@ export function usePedidos() {
     confirmarPedido,
     reasignarDelivery,
     cancelarPedido,
+    cambiarEstado,
   };
 }

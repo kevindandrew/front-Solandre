@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { Search, Plus } from "lucide-react";
+import { useState, Suspense, useEffect } from "react";
+import { Search, Plus, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import GenericTable from "@/components/shared/GenericTable";
 import IngredienteFormModal from "./_components/IngredienteFormModal";
 import { useIngredientes } from "./_components/hooks/useIngredientes";
@@ -22,11 +23,20 @@ export default function InventarioPage() {
   const [isViewMode, setIsViewMode] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentIngredienteId, setCurrentIngredienteId] = useState(null);
+  const [lowStockItems, setLowStockItems] = useState([]);
   const [formData, setFormData] = useState({
     nombre: "",
     stock_actual: 0,
     unidad: "kg",
   });
+
+  // Detectar ingredientes con stock bajo
+  useEffect(() => {
+    const lowStock = ingredientes.filter(
+      (ing) => parseFloat(ing.stock_actual) < 20
+    );
+    setLowStockItems(lowStock);
+  }, [ingredientes]);
 
   const openModal = (
     ingrediente = null,
@@ -130,6 +140,35 @@ export default function InventarioPage() {
               Controla el inventario de ingredientes y suministros
             </p>
           </div>
+
+          {/* Alerta de Stock Bajo */}
+          {lowStockItems.length > 0 && (
+            <Alert variant="destructive" className="bg-red-50 border-red-200">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <AlertTitle className="text-red-800 font-bold">
+                Alerta: {lowStockItems.length} ingrediente(s) con stock bajo
+              </AlertTitle>
+              <AlertDescription className="text-red-700">
+                <div className="mt-2 space-y-1">
+                  {lowStockItems.map((item) => (
+                    <div
+                      key={item.ingrediente_id}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="font-medium">{item.nombre}</span>
+                      <Badge variant="destructive" className="ml-2">
+                        {parseFloat(item.stock_actual).toFixed(2)} {item.unidad}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-sm">
+                  Considera reabastecer estos ingredientes pronto para evitar
+                  interrupciones en la producción.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center justify-between mb-6">
