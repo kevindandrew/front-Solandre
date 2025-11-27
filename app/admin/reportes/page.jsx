@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import GenericTable from "@/components/shared/GenericTable";
-import { usePedidos } from "@/components/pedidos/hooks/usePedidos";
+import { usePedidos } from "../pedidos/_components/hooks/usePedidos";
 
 export default function ReportesPage() {
   const { pedidos } = usePedidos();

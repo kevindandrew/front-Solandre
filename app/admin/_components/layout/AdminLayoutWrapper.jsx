@@ -1,7 +1,7 @@
 "use client";
 
-import Sidebar from "@/components/layout/Sidebar";
-import MobileNav from "@/components/layout/MobileNav";
+import Sidebar from "./Sidebar";
+import MobileNav from "./MobileNav";
 
 export default function AdminLayoutWrapper({ children }) {
   return (

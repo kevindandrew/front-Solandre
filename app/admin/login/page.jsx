@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-import LoginView from "@/components/layout/LoginView";
+import LoginView from "../_components/layout/LoginView";
 
 export default function LoginPage() {
   const router = useRouter();

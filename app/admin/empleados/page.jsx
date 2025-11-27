@@ -1,17 +1,14 @@
 "use client";
 
 import { useState, useMemo, Suspense } from "react";
-import {
-  useEmpleados,
-  useZonas,
-} from "@/components/empleados/hooks/useEmpleados";
-import { useEmpleadosActions } from "@/components/empleados/hooks/useEmpleadosActions";
-import EmpleadosHeader from "@/components/empleados/EmpleadosHeader";
+import { useEmpleados, useZonas } from "./_components/hooks/useEmpleados";
+import { useEmpleadosActions } from "./_components/hooks/useEmpleadosActions";
+import EmpleadosHeader from "./_components/EmpleadosHeader";
 import GenericTable from "@/components/shared/GenericTable";
-import EmpleadoFormModal from "@/components/empleados/EmpleadoFormModal";
-import EmpleadoViewModal from "@/components/empleados/EmpleadoViewModal";
-import DeleteConfirmDialog from "@/components/empleados/DeleteConfirmDialog";
-import LoadingState from "@/components/empleados/LoadingState";
+import EmpleadoFormModal from "./_components/EmpleadoFormModal";
+import EmpleadoViewModal from "./_components/EmpleadoViewModal";
+import DeleteConfirmDialog from "./_components/DeleteConfirmDialog";
+import LoadingState from "./_components/LoadingState";
 import { Badge } from "@/components/ui/badge";
 
 export default function EmpleadosPage() {

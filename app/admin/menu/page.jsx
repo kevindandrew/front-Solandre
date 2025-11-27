@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import MenuHeader from "@/components/menu/MenuHeader";
-import MenuWeekView from "@/components/menu/MenuWeekView";
-import MenuFormModal from "@/components/menu/MenuFormModal";
-import { useMenu, usePlatos } from "@/components/menu/hooks/useMenu";
-import { useMenuActions } from "@/components/menu/hooks/useMenuActions";
+import MenuHeader from "./_components/MenuHeader";
+import MenuWeekView from "./_components/MenuWeekView";
+import MenuFormModal from "./_components/MenuFormModal";
+import { useMenu, usePlatos } from "./_components/hooks/useMenu";
+import { useMenuActions } from "./_components/hooks/useMenuActions";
 
 export default function MenuPage() {
   const { menus, loading: loadingMenus, refetch: refetchMenus } = useMenu();

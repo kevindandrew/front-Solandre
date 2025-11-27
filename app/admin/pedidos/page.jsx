@@ -5,7 +5,7 @@ import { Clock, User, Package, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { usePedidos } from "@/components/pedidos/hooks/usePedidos";
+import { usePedidos } from "./_components/hooks/usePedidos";
 
 const ESTADOS_COLORES = {
   Pendiente: "bg-yellow-100 text-yellow-800",

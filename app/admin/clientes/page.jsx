@@ -6,15 +6,11 @@ import { Search, Eye, Plus, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useClientes } from "@/components/clientes/hooks/useClientes";
+import { useClientes } from "./_components/hooks/useClientes";
 
 const GenericTable = lazy(() => import("@/components/shared/GenericTable"));
-const HistorialModal = lazy(() =>
-  import("@/components/clientes/HistorialModal")
-);
-const ClienteFormModal = lazy(() =>
-  import("@/components/clientes/ClienteFormModal")
-);
+const HistorialModal = lazy(() => import("./_components/HistorialModal"));
+const ClienteFormModal = lazy(() => import("./_components/ClienteFormModal"));
 
 export default function ClientesPage() {
   const {

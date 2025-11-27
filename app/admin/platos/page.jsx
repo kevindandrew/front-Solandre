@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { usePlatos } from "@/components/platos/hooks/usePlatos";
+import { usePlatos } from "./_components/hooks/usePlatos";
 
 const GenericTable = lazy(() => import("@/components/shared/GenericTable"));
-const PlatoFormModal = lazy(() => import("@/components/platos/PlatoFormModal"));
+const PlatoFormModal = lazy(() => import("./_components/PlatoFormModal"));
 
 export default function PlatosPage() {
   const { platos, createPlato, updatePlato, deletePlato } = usePlatos();

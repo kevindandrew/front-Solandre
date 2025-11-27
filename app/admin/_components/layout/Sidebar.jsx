@@ -19,7 +19,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import EditProfileModal from "@/components/layout/EditProfileModal";
+import EditProfileModal from "./EditProfileModal";
 
 const navigation = [
   { id: "inicio", name: "Inicio", icon: Home, href: "/admin/inicio" },

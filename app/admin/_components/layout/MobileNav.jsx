@@ -22,7 +22,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import EditProfileModal from "@/components/layout/EditProfileModal";
+import EditProfileModal from "./EditProfileModal";
 
 const navigation = [
   { id: "inicio", name: "Inicio", icon: Home, href: "/admin/inicio" },

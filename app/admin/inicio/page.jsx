@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { ShoppingCart, CheckCircle, Clock, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import KPICard from "@/components/dashboard/KPICard";
-import PedidosPorEstadoChart from "@/components/dashboard/PedidosPorEstadoChart";
+import KPICard from "./_components/KPICard";
+import PedidosPorEstadoChart from "./_components/PedidosPorEstadoChart";
 
 export default function InicioPage() {
   const [kpiData, setKpiData] = useState(null);

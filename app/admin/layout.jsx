@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Cookies from "js-cookie";
-import AdminLayoutWrapper from "@/components/layout/AdminLayoutWrapper";
+import AdminLayoutWrapper from "./_components/layout/AdminLayoutWrapper";
 import { Toaster } from "@/components/ui/toaster";
 
 export default function AdminRootLayout({ children }) {

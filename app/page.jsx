@@ -4,7 +4,7 @@ import { Suspense, lazy } from "react";
 import { AuthProvider } from "@/lib/authContext";
 import { Toaster } from "@/components/ui/toaster";
 
-const LandingPage = lazy(() => import("@/components/landing/LandingPage"));
+const LandingPage = lazy(() => import("./_components/landing/LandingPage"));
 
 export default function Home() {
   return (
