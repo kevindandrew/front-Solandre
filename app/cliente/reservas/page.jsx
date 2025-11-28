@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import Cookies from "js-cookie";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MapPin, CreditCard, Utensils, AlertCircle } from "lucide-react";
+
+const LocationPicker = dynamic(() => import("./_components/LocationPicker"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[300px] w-full bg-gray-100 animate-pulse rounded-md flex items-center justify-center text-gray-400">
+      Cargando mapa...
+    </div>
+  ),
+});
 
 function ReservaForm() {
   const searchParams = useSearchParams();
@@ -38,6 +48,8 @@ function ReservaForm() {
     zona_id: "",
     direccion_referencia: "",
     google_maps_link: "",
+    latitud: null,
+    longitud: null,
     metodo_pago: "QR",
     // Array of arrays, where index corresponds to the item index (0 to quantity-1)
     // Each inner array contains ingredient IDs to exclude for that specific item
@@ -143,6 +155,16 @@ function ReservaForm() {
     });
   };
 
+  const handleLocationSelect = useCallback((latlng) => {
+    setFormData((prev) => ({
+      ...prev,
+      latitud: latlng.lat,
+      longitud: latlng.lng,
+      // Opcional: Actualizar el link de Google Maps automáticamente
+      google_maps_link: `https://www.google.com/maps/search/?api=1&query=${latlng.lat},${latlng.lng}`,
+    }));
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -181,8 +203,8 @@ function ReservaForm() {
         zona_id: parseInt(formData.zona_id),
         google_maps_link: formData.google_maps_link || null,
         direccion_referencia: formData.direccion_referencia || null,
-        latitud: null,
-        longitud: null,
+        latitud: formData.latitud,
+        longitud: formData.longitud,
         metodo_pago: formData.metodo_pago,
         items: groupedItems,
       };
@@ -303,6 +325,15 @@ function ReservaForm() {
               </div>
 
               <div className="space-y-2">
+                <Label>Ubicación Exacta (Mueve el pin)</Label>
+                <LocationPicker onLocationSelect={handleLocationSelect} />
+                <p className="text-xs text-gray-500">
+                  Haz clic en el mapa o arrastra el marcador para indicar tu
+                  ubicación exacta.
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label>Dirección / Referencia</Label>
                 <textarea
                   className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -317,21 +348,7 @@ function ReservaForm() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Link de Google Maps (Opcional)</Label>
-                <input
-                  type="url"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="https://maps.google.com/..."
-                  value={formData.google_maps_link}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      google_maps_link: e.target.value,
-                    })
-                  }
-                />
-              </div>
+              {/* Link de Google Maps eliminado ya que se genera automáticamente */}
             </CardContent>
           </Card>
 
@@ -529,15 +546,16 @@ function ReservaForm() {
               <Button
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-6 text-lg mt-4"
                 onClick={handleSubmit}
-                disabled={submitting || !formData.zona_id}
+                disabled={submitting || !formData.zona_id || !formData.latitud}
               >
                 {submitting ? "Procesando..." : "Confirmar Pedido"}
               </Button>
 
-              {!formData.zona_id && (
-                <p className="text-xs text-red-500 text-center">
-                  Selecciona una zona de entrega para continuar
-                </p>
+              {(!formData.zona_id || !formData.latitud) && (
+                <div className="text-xs text-red-500 text-center space-y-1">
+                  {!formData.zona_id && <p>Selecciona una zona de entrega</p>}
+                  {!formData.latitud && <p>Indica tu ubicación en el mapa</p>}
+                </div>
               )}
             </CardContent>
           </Card>

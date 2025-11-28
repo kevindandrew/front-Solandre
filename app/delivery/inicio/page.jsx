@@ -140,9 +140,14 @@ export default function DeliveryDashboard() {
                           Ref: {pedido.direccion_referencia}
                         </p>
                       )}
-                      {pedido.google_maps_link && (
+                      {(pedido.latitud && pedido.longitud) ||
+                      pedido.google_maps_link ? (
                         <a
-                          href={pedido.google_maps_link}
+                          href={
+                            pedido.latitud && pedido.longitud
+                              ? `https://www.google.com/maps/search/?api=1&query=${pedido.latitud},${pedido.longitud}`
+                              : pedido.google_maps_link
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
@@ -150,7 +155,7 @@ export default function DeliveryDashboard() {
                           <Navigation className="h-4 w-4" />
                           Ver en Google Maps
                         </a>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 </div>

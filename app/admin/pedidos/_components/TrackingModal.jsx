@@ -43,6 +43,19 @@ const ESTADOS_COLORES_BG = {
   Cancelado: "bg-red-100 text-red-800",
 };
 
+import { useState, useEffect } from "react";
+import { useFetch } from "@/hooks/useFetch";
+import dynamic from "next/dynamic";
+
+const LocationViewer = dynamic(() => import("./LocationViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full w-full bg-gray-100 animate-pulse flex items-center justify-center text-gray-400">
+      Cargando mapa...
+    </div>
+  ),
+});
+
 export default function TrackingModal({
   pedido,
   isOpen,
@@ -51,14 +64,32 @@ export default function TrackingModal({
   onReasignar,
   onCambiarEstado,
 }) {
-  if (!pedido) return null;
+  const { fetchData } = useFetch();
+  const [fullPedido, setFullPedido] = useState(pedido);
+
+  useEffect(() => {
+    if (pedido) {
+      setFullPedido(pedido); // Reset to initial prop
+      const fetchDetails = async () => {
+        const result = await fetchData(
+          `/admin/pedidos/${pedido.pedido_id}/detalle-completo`
+        );
+        if (result.success) {
+          setFullPedido((prev) => ({ ...prev, ...result.data }));
+        }
+      };
+      fetchDetails();
+    }
+  }, [pedido]);
+
+  if (!fullPedido) return null;
 
   const getEstadoIndex = (estado) => {
     return estadosOrden.findIndex((e) => e.nombre === estado);
   };
 
-  const estadoActualIndex = getEstadoIndex(pedido.estado);
-  const esCancelado = pedido.estado === "Cancelado";
+  const estadoActualIndex = getEstadoIndex(fullPedido.estado);
+  const esCancelado = fullPedido.estado === "Cancelado";
 
   const formatFecha = (fecha) => {
     if (!fecha) return "---";
@@ -80,9 +111,11 @@ export default function TrackingModal({
         <DialogTitle className="text-2xl font-bold flex items-center justify-between">
           <span>Tracking Delivery</span>
           <Badge
-            className={ESTADOS_COLORES_BG[pedido.estado] + " text-lg px-3 py-1"}
+            className={
+              ESTADOS_COLORES_BG[fullPedido.estado] + " text-lg px-3 py-1"
+            }
           >
-            {pedido.estado}
+            {fullPedido.estado}
           </Badge>
         </DialogTitle>
 
@@ -91,27 +124,70 @@ export default function TrackingModal({
           <div className="bg-gray-50 p-4 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">Tracking ID</p>
             <p className="text-2xl font-bold text-gray-900">
-              #{pedido.pedido_id}-{pedido.token_entrega || "0000"}
+              #{fullPedido.pedido_id}-{fullPedido.token_entrega || "0000"}
             </p>
             <p className="text-sm text-gray-500 mt-2">
-              {formatFecha(pedido.fecha_pedido)}
+              {formatFecha(fullPedido.fecha_pedido)}
             </p>
           </div>
 
-          {/* Mapa Placeholder */}
-          <div className="bg-gray-200 rounded-lg h-48 flex items-center justify-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-br from-blue-100 to-green-100 opacity-50"></div>
-            <div className="relative z-10 text-center">
-              <MapPin className="h-16 w-16 mx-auto text-gray-600 mb-2" />
-              <p className="text-gray-600 font-medium">
-                {pedido.zona || "Ubicación del pedido"}
+          {/* Mapa o Placeholder */}
+          {/* Mapa o Placeholder */}
+          {/* Mapa o Placeholder */}
+          <a
+            href={
+              fullPedido.latitud && fullPedido.longitud
+                ? `https://www.google.com/maps/search/?api=1&query=${fullPedido.latitud},${fullPedido.longitud}`
+                : "#"
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`block bg-gray-200 rounded-lg h-48 relative overflow-hidden border border-gray-300 transition-transform hover:scale-[1.01] ${
+              !fullPedido.latitud ? "pointer-events-none" : "cursor-pointer"
+            }`}
+            title="Clic para abrir en Google Maps"
+          >
+            {fullPedido.latitud && fullPedido.longitud ? (
+              <>
+                <LocationViewer
+                  lat={fullPedido.latitud}
+                  lng={fullPedido.longitud}
+                />
+                <div className="absolute bottom-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-medium text-blue-600 shadow-sm flex items-center gap-1 z-[400]">
+                  <MapPin className="h-3 w-3" />
+                  Abrir en Google Maps
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-linear-to-br from-blue-100 to-green-100 opacity-50"></div>
+                <div className="relative z-10 text-center flex flex-col items-center justify-center h-full">
+                  <MapPin className="h-16 w-16 text-gray-600 mb-2" />
+                  <p className="text-gray-600 font-medium">
+                    {fullPedido.zona?.nombre ||
+                      fullPedido.zona ||
+                      "Ubicación no disponible"}
+                  </p>
+                  {fullPedido.direccion_entrega && (
+                    <p className="text-sm text-gray-500 mt-1 px-4">
+                      {fullPedido.direccion_entrega}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+          </a>
+
+          {/* Dirección y Referencia (Visible siempre) */}
+          <div className="text-center space-y-1">
+            <p className="font-medium text-gray-900">
+              {fullPedido.direccion_entrega}
+            </p>
+            {fullPedido.direccion_referencia && (
+              <p className="text-sm text-gray-500 italic">
+                Ref: {fullPedido.direccion_referencia}
               </p>
-              {pedido.direccion_entrega && (
-                <p className="text-sm text-gray-500 mt-1 px-4">
-                  {pedido.direccion_entrega}
-                </p>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Timeline de Estados */}
@@ -129,23 +205,23 @@ export default function TrackingModal({
                   let fechaEstado = null;
                   switch (estado.nombre) {
                     case "Pendiente":
-                      fechaEstado = pedido.fecha_pedido;
+                      fechaEstado = fullPedido.fecha_pedido;
                       break;
                     case "Confirmado":
-                      fechaEstado = pedido.fecha_confirmado;
+                      fechaEstado = fullPedido.fecha_confirmado;
                       break;
                     case "En Cocina":
                       // Usamos fecha_confirmado como aproximación si no hay fecha específica
-                      fechaEstado = pedido.fecha_confirmado;
+                      fechaEstado = fullPedido.fecha_confirmado;
                       break;
                     case "Listo para Entrega":
-                      fechaEstado = pedido.fecha_listo_cocina;
+                      fechaEstado = fullPedido.fecha_listo_cocina;
                       break;
                     case "En Reparto":
-                      fechaEstado = pedido.fecha_en_reparto;
+                      fechaEstado = fullPedido.fecha_en_reparto;
                       break;
                     case "Entregado":
-                      fechaEstado = pedido.fecha_entrega;
+                      fechaEstado = fullPedido.fecha_entrega;
                       break;
                     default:
                       fechaEstado = null;
@@ -228,22 +304,31 @@ export default function TrackingModal({
               </div>
               <div className="space-y-2 text-sm">
                 <p className="font-medium text-gray-900">
-                  {pedido.cliente_nombre || "Cliente"}
+                  {fullPedido.cliente?.nombre ||
+                    fullPedido.cliente_nombre ||
+                    "Cliente"}
                 </p>
-                {pedido.cliente_email && (
+                {(fullPedido.cliente?.email || fullPedido.cliente_email) && (
                   <div className="flex items-center gap-2 text-gray-600">
                     <Mail className="h-4 w-4" />
-                    <span className="break-all">{pedido.cliente_email}</span>
+                    <span className="break-all">
+                      {fullPedido.cliente?.email || fullPedido.cliente_email}
+                    </span>
                   </div>
                 )}
-                {pedido.cliente_telefono && (
+                {(fullPedido.cliente?.telefono ||
+                  fullPedido.cliente_telefono) && (
                   <div className="flex items-center gap-2 text-gray-600">
                     <Phone className="h-4 w-4" />
                     <a
-                      href={`tel:${pedido.cliente_telefono}`}
+                      href={`tel:${
+                        fullPedido.cliente?.telefono ||
+                        fullPedido.cliente_telefono
+                      }`}
                       className="text-blue-600 hover:underline"
                     >
-                      {pedido.cliente_telefono}
+                      {fullPedido.cliente?.telefono ||
+                        fullPedido.cliente_telefono}
                     </a>
                   </div>
                 )}
@@ -258,27 +343,35 @@ export default function TrackingModal({
               </div>
               <div className="space-y-2 text-sm">
                 <p className="font-medium text-gray-900">
-                  {pedido.delivery_nombre || "Asignando..."}
+                  {fullPedido.delivery?.nombre ||
+                    fullPedido.delivery_nombre ||
+                    "Asignando..."}
                 </p>
-                {pedido.delivery_telefono && (
+                {(fullPedido.delivery?.telefono ||
+                  fullPedido.delivery_telefono) && (
                   <div className="flex items-center gap-2 text-gray-600">
                     <Phone className="h-4 w-4" />
                     <a
-                      href={`tel:${pedido.delivery_telefono}`}
+                      href={`tel:${
+                        fullPedido.delivery?.telefono ||
+                        fullPedido.delivery_telefono
+                      }`}
                       className="text-orange-600 hover:underline"
                     >
-                      {pedido.delivery_telefono}
+                      {fullPedido.delivery?.telefono ||
+                        fullPedido.delivery_telefono}
                     </a>
                   </div>
                 )}
-                {!pedido.delivery_nombre && (
-                  <p className="text-xs text-gray-500">
-                    El delivery será asignado pronto
-                  </p>
-                )}
+                {!fullPedido.delivery?.nombre &&
+                  !fullPedido.delivery_nombre && (
+                    <p className="text-xs text-gray-500">
+                      El delivery será asignado pronto
+                    </p>
+                  )}
 
                 {/* Reasignar Delivery */}
-                {!esCancelado && pedido.estado !== "Entregado" && (
+                {!esCancelado && fullPedido.estado !== "Entregado" && (
                   <div className="mt-4 pt-4 border-t border-orange-200">
                     <p className="text-xs font-semibold text-orange-800 mb-2">
                       Reasignar Delivery:
@@ -286,7 +379,7 @@ export default function TrackingModal({
                     <div className="flex gap-2">
                       <Select
                         onValueChange={(value) =>
-                          onReasignar(pedido.pedido_id, parseInt(value))
+                          onReasignar(fullPedido.pedido_id, parseInt(value))
                         }
                       >
                         <SelectTrigger className="w-full h-8 text-xs bg-white border-orange-300">
@@ -324,9 +417,9 @@ export default function TrackingModal({
                     Forzar Cambio de Estado:
                   </label>
                   <Select
-                    value={pedido.estado}
+                    value={fullPedido.estado}
                     onValueChange={(value) =>
-                      onCambiarEstado(pedido.pedido_id, value)
+                      onCambiarEstado(fullPedido.pedido_id, value)
                     }
                   >
                     <SelectTrigger className="w-full bg-white">
@@ -351,9 +444,9 @@ export default function TrackingModal({
             <h4 className="font-bold text-gray-900 mb-3">
               Detalles del Pedido
             </h4>
-            {pedido.items && pedido.items.length > 0 ? (
+            {fullPedido.items && fullPedido.items.length > 0 ? (
               <div className="space-y-2">
-                {pedido.items.map((item, idx) => (
+                {fullPedido.items.map((item, idx) => (
                   <div
                     key={idx}
                     className="flex justify-between items-center text-sm"
@@ -368,13 +461,13 @@ export default function TrackingModal({
                     )}
                   </div>
                 ))}
-                {pedido.notas_especiales && (
+                {fullPedido.notas_especiales && (
                   <div className="mt-3 p-2 bg-yellow-50 rounded border-l-2 border-yellow-400">
                     <p className="text-xs font-medium text-yellow-900">
                       Notas especiales:
                     </p>
                     <p className="text-sm text-yellow-800">
-                      {pedido.notas_especiales}
+                      {fullPedido.notas_especiales}
                     </p>
                   </div>
                 )}
@@ -382,7 +475,10 @@ export default function TrackingModal({
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-gray-900">Total</span>
                     <span className="text-xl font-bold text-green-600">
-                      Bs. {pedido.total?.toFixed(2) || "0.00"}
+                      Bs.{" "}
+                      {fullPedido.total?.toFixed(2) ||
+                        fullPedido.total_pedido?.toFixed(2) ||
+                        "0.00"}
                     </span>
                   </div>
                 </div>
