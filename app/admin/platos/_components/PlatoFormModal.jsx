@@ -51,19 +51,11 @@ export default function PlatoFormModal({
   const fetchInventario = async () => {
     setLoadingInventario(true);
     try {
-      const token = Cookies.get("token");
-      const response = await fetch(
-        "https://backend-solandre.onrender.com/inventario",
-        {
-          headers: {
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setInventario(data);
+      const result = await fetchData("/admin/ingredientes");
+      if (result.success) {
+        setInventario(result.data);
+      } else {
+        console.error("Error al cargar inventario:", result.error);
       }
     } catch (error) {
       console.error("Error al cargar inventario:", error);
@@ -76,10 +68,7 @@ export default function PlatoFormModal({
     const ingredientesActuales = formData.ingredientes || [];
     setFormData({
       ...formData,
-      ingredientes: [
-        ...ingredientesActuales,
-        { ingrediente_id: "", cantidad: 0, unidad: "" },
-      ],
+      ingredientes: [...ingredientesActuales, { ingrediente_id: "" }],
     });
   };
 
@@ -93,13 +82,9 @@ export default function PlatoFormModal({
     const ingredientesActuales = [...(formData.ingredientes || [])];
 
     if (campo === "ingrediente_id") {
-      const ingredienteSeleccionado = inventario.find(
-        (ing) => ing.ingrediente_id === parseInt(valor)
-      );
       ingredientesActuales[index] = {
         ...ingredientesActuales[index],
         ingrediente_id: valor,
-        unidad: ingredienteSeleccionado?.unidad || "kg",
       };
     } else {
       ingredientesActuales[index][campo] = valor;
@@ -375,39 +360,11 @@ export default function PlatoFormModal({
                                   key={inv.ingrediente_id}
                                   value={String(inv.ingrediente_id)}
                                 >
-                                  {inv.nombre} ({inv.stock_actual} {inv.unidad})
+                                  {inv.nombre}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
-                        </div>
-
-                        <div className="w-24">
-                          <Label className="text-xs">Cantidad</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={ingrediente.cantidad}
-                            onChange={(e) =>
-                              actualizarIngrediente(
-                                index,
-                                "cantidad",
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                            disabled={isViewMode}
-                            className="h-9"
-                          />
-                        </div>
-
-                        <div className="w-16">
-                          <Label className="text-xs">Unidad</Label>
-                          <Input
-                            value={ingrediente.unidad}
-                            disabled
-                            className="h-9 bg-gray-100"
-                          />
                         </div>
 
                         {!isViewMode && (
@@ -436,8 +393,9 @@ export default function PlatoFormModal({
                     );
                     return (
                       <Badge key={idx} variant="secondary" className="text-xs">
-                        {ingredienteInfo?.nombre || `ID: ${ing.ingrediente_id}`}{" "}
-                        - {ing.cantidad} {ing.unidad}
+                        {ing.nombre ||
+                          ingredienteInfo?.nombre ||
+                          `ID: ${ing.ingrediente_id}`}
                       </Badge>
                     );
                   })}

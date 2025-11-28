@@ -25,58 +25,6 @@ export function useClientes() {
     return null;
   };
 
-  const createCliente = async (clienteData) => {
-    const result = await fetchData("/admin/clientes", "POST", clienteData);
-    if (result.success) {
-      toast({ title: "Éxito", description: "Cliente creado correctamente" });
-      fetchClientes();
-      return true;
-    }
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: result.error || "No se pudo crear el cliente",
-    });
-    return false;
-  };
-
-  const updateCliente = async (clienteId, clienteData) => {
-    const result = await fetchData(
-      `/admin/clientes/${clienteId}`,
-      "PUT",
-      clienteData
-    );
-    if (result.success) {
-      toast({
-        title: "Éxito",
-        description: "Cliente actualizado correctamente",
-      });
-      fetchClientes();
-      return true;
-    }
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: result.error || "No se pudo actualizar el cliente",
-    });
-    return false;
-  };
-
-  const deleteCliente = async (clienteId) => {
-    const result = await fetchData(`/admin/clientes/${clienteId}`, "DELETE");
-    if (result.success) {
-      toast({ title: "Éxito", description: "Cliente eliminado correctamente" });
-      fetchClientes();
-      return true;
-    }
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: result.error || "No se pudo eliminar el cliente",
-    });
-    return false;
-  };
-
   useEffect(() => {
     fetchClientes();
   }, []);
@@ -84,8 +32,5 @@ export function useClientes() {
   return {
     clientes,
     fetchHistorial,
-    createCliente,
-    updateCliente,
-    deleteCliente,
   };
 }

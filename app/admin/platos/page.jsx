@@ -22,7 +22,8 @@ import {
 const PlatoFormModal = lazy(() => import("./_components/PlatoFormModal"));
 
 export default function PlatosPage() {
-  const { platos, createPlato, updatePlato, deletePlato } = usePlatos();
+  const { platos, createPlato, updatePlato, deletePlato, getPlatoById } =
+    usePlatos();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,21 +40,41 @@ export default function PlatosPage() {
     ingredientes: [],
   });
 
-  const openModal = (plato = null, viewMode = false, editMode = false) => {
+  const openModal = async (
+    plato = null,
+    viewMode = false,
+    editMode = false
+  ) => {
     setIsViewMode(viewMode);
     setIsEdit(editMode);
     setCurrentPlatoId(plato?.plato_id || null);
 
     if (plato) {
+      // Fetch full details including ingredients with quantity
+      let fullPlato = plato;
+      if (getPlatoById) {
+        console.log("Fetching details for plato:", plato.plato_id);
+        const details = await getPlatoById(plato.plato_id);
+        console.log("Details received:", details);
+        if (details) {
+          fullPlato = details;
+        } else {
+          console.error("Failed to fetch details for plato:", plato.plato_id);
+        }
+      }
+
       // Extraer la URL correcta si viene en formato objeto
-      const cleanImageUrl = extractImageUrl(plato.imagen_url) || "";
+      const cleanImageUrl = extractImageUrl(fullPlato.imagen_url) || "";
 
       setFormData({
-        nombre: plato.nombre,
-        descripcion: plato.descripcion || "",
-        tipo: plato.tipo,
+        nombre: fullPlato.nombre,
+        descripcion: fullPlato.descripcion || "",
+        tipo: fullPlato.tipo,
         imagen_url: cleanImageUrl,
-        ingredientes: plato.ingredientes || [],
+        ingredientes: (fullPlato.ingredientes || []).map((ing) => ({
+          ingrediente_id: ing.ingrediente_id,
+          nombre: ing.nombre,
+        })),
       });
     } else {
       setFormData({
@@ -101,17 +122,29 @@ export default function PlatosPage() {
       return;
     }
 
+    // Procesar ingredientes para asegurar tipos correctos
+    const ingredientesProcesados = (formData.ingredientes || [])
+      .filter((ing) => ing.ingrediente_id)
+      .map((ing) => ({
+        ingrediente_id: parseInt(ing.ingrediente_id),
+      }));
+
     const dataToSend = {
       nombre: formData.nombre.trim(),
       tipo: formData.tipo,
       descripcion: formData.descripcion.trim() || "",
       imagen_url: formData.imagen_url || "",
-      ingredientes: formData.ingredientes || [],
+      ingredientes: ingredientesProcesados,
     };
+
+    console.log("Enviando datos del plato:", dataToSend);
 
     const success = isEdit
       ? await updatePlato(currentPlatoId, dataToSend)
       : await createPlato(dataToSend);
+
+    console.log("Resultado de la operación:", success);
+
     if (success) setIsModalOpen(false);
   };
 

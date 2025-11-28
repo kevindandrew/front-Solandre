@@ -79,21 +79,27 @@ export default function ClienteFormModal({
                 disabled={isViewMode}
               />
             </div>
-            {!isEdit && !isViewMode && (
-              <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  placeholder="Contraseña"
-                  required
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                placeholder={
+                  isEdit ? "Nueva contraseña (min 6 caracteres)" : "Contraseña"
+                }
+                required
+                minLength={6}
+              />
+              {isEdit && (
+                <p className="text-xs text-yellow-600">
+                  * La API requiere establecer una nueva contraseña al editar.
+                </p>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>

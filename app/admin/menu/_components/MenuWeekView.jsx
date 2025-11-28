@@ -20,8 +20,8 @@ export default function MenuWeekView({
   onCreate,
 }) {
   const getMenuForDate = (date) => {
-    // Format date as YYYY-MM-DD to match API format
-    const formattedDate = date.toISOString().split("T")[0];
+    // Format date as YYYY-MM-DD using local time
+    const formattedDate = date.toLocaleDateString("en-CA");
     return menus.find((menu) => menu.fecha === formattedDate);
   };
 
@@ -118,7 +118,7 @@ export default function MenuWeekView({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onDelete(menu)}
+                      onClick={() => onDelete(menu.menu_dia_id)}
                       className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="h-3 w-3" />

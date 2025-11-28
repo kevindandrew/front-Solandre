@@ -10,12 +10,23 @@ export function usePlatos() {
   const fetchPlatos = async () => {
     const result = await fetchData("/admin/platos");
     if (result.success) {
+      console.log("Platos loaded:", result.data);
       setPlatos(result.data);
     }
   };
 
+  const getPlatoById = async (id) => {
+    const result = await fetchData(`/admin/platos/${id}`);
+    if (result.success) {
+      return result.data;
+    }
+    console.error("Error fetching plato details:", result.error);
+    return null;
+  };
+
   const createPlato = async (platoData) => {
     const result = await fetchData("/admin/platos", "POST", platoData);
+    console.log("Create result:", result);
     if (result.success) {
       toast({ title: "Éxito", description: "Plato creado correctamente" });
       fetchPlatos();
@@ -37,6 +48,7 @@ export function usePlatos() {
       "PUT",
       platoData
     );
+    console.log("Update result:", result);
     if (result.success) {
       toast({ title: "Éxito", description: "Plato actualizado correctamente" });
       fetchPlatos();
@@ -75,5 +87,6 @@ export function usePlatos() {
     updatePlato,
     deletePlato,
     refetch: fetchPlatos,
+    getPlatoById,
   };
 }

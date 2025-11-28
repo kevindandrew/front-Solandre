@@ -70,14 +70,19 @@ export default function EditProfileModal({ onClose }) {
       if (response.ok) {
         const updatedUser = await response.json();
         const currentUser = JSON.parse(Cookies.get("user") || "{}");
-        localStorage.setItem(
+        Cookies.set(
           "user",
           JSON.stringify({
             ...currentUser,
             nombre_completo: updatedUser.nombre_completo,
             email: updatedUser.email,
             telefono: updatedUser.telefono,
-          })
+          }),
+          {
+            expires: 7,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+          }
         );
 
         toast({

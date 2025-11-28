@@ -14,7 +14,15 @@ import {
   Mail,
   ChefHat,
   X,
+  Settings,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const estadosOrden = [
   { nombre: "Pendiente", icon: Clock, color: "text-yellow-500" },
@@ -35,7 +43,14 @@ const ESTADOS_COLORES_BG = {
   Cancelado: "bg-red-100 text-red-800",
 };
 
-export default function TrackingModal({ pedido, isOpen, onClose }) {
+export default function TrackingModal({
+  pedido,
+  isOpen,
+  onClose,
+  deliveries,
+  onReasignar,
+  onCambiarEstado,
+}) {
   if (!pedido) return null;
 
   const getEstadoIndex = (estado) => {
@@ -47,12 +62,15 @@ export default function TrackingModal({ pedido, isOpen, onClose }) {
 
   const formatFecha = (fecha) => {
     if (!fecha) return "---";
-    return new Date(fecha).toLocaleString("es-ES", {
+    // Asegurar que se interprete como UTC si viene sin zona horaria
+    const fechaObj = new Date(fecha.endsWith("Z") ? fecha : `${fecha}Z`);
+    return fechaObj.toLocaleString("es-ES", {
       day: "2-digit",
       month: "short",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "America/La_Paz",
     });
   };
 
@@ -107,6 +125,32 @@ export default function TrackingModal({ pedido, isOpen, onClose }) {
                   const isCompleted = index <= estadoActualIndex;
                   const isCurrent = index === estadoActualIndex;
 
+                  // Determinar la fecha correcta para este estado
+                  let fechaEstado = null;
+                  switch (estado.nombre) {
+                    case "Pendiente":
+                      fechaEstado = pedido.fecha_pedido;
+                      break;
+                    case "Confirmado":
+                      fechaEstado = pedido.fecha_confirmado;
+                      break;
+                    case "En Cocina":
+                      // Usamos fecha_confirmado como aproximación si no hay fecha específica
+                      fechaEstado = pedido.fecha_confirmado;
+                      break;
+                    case "Listo para Entrega":
+                      fechaEstado = pedido.fecha_listo_cocina;
+                      break;
+                    case "En Reparto":
+                      fechaEstado = pedido.fecha_en_reparto;
+                      break;
+                    case "Entregado":
+                      fechaEstado = pedido.fecha_entrega;
+                      break;
+                    default:
+                      fechaEstado = null;
+                  }
+
                   return (
                     <div
                       key={estado.nombre}
@@ -142,9 +186,10 @@ export default function TrackingModal({ pedido, isOpen, onClose }) {
                           >
                             {estado.nombre}
                           </p>
-                          {isCurrent && (
+                          {/* Mostrar hora solo si el estado está completado o es el actual Y tenemos fecha */}
+                          {(isCompleted || isCurrent) && fechaEstado && (
                             <span className="text-sm font-medium text-green-600">
-                              {formatFecha(pedido.fecha_pedido).split(",")[1]}
+                              {formatFecha(fechaEstado).split(",")[1]}
                             </span>
                           )}
                         </div>
@@ -231,9 +276,75 @@ export default function TrackingModal({ pedido, isOpen, onClose }) {
                     El delivery será asignado pronto
                   </p>
                 )}
+
+                {/* Reasignar Delivery */}
+                {!esCancelado && pedido.estado !== "Entregado" && (
+                  <div className="mt-4 pt-4 border-t border-orange-200">
+                    <p className="text-xs font-semibold text-orange-800 mb-2">
+                      Reasignar Delivery:
+                    </p>
+                    <div className="flex gap-2">
+                      <Select
+                        onValueChange={(value) =>
+                          onReasignar(pedido.pedido_id, parseInt(value))
+                        }
+                      >
+                        <SelectTrigger className="w-full h-8 text-xs bg-white border-orange-300">
+                          <SelectValue placeholder="Seleccionar delivery..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {deliveries?.map((d) => (
+                            <SelectItem
+                              key={d.usuario_id}
+                              value={String(d.usuario_id)}
+                            >
+                              {d.nombre_completo} ({d.zona_nombre || "Sin zona"}
+                              )
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
+          {/* Acciones Administrativas */}
+          {!esCancelado && (
+            <div className="bg-gray-100 p-4 rounded-lg border border-gray-200">
+              <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Acciones Administrativas
+              </h4>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <label className="text-xs font-medium text-gray-600 block mb-1">
+                    Forzar Cambio de Estado:
+                  </label>
+                  <Select
+                    value={pedido.estado}
+                    onValueChange={(value) =>
+                      onCambiarEstado(pedido.pedido_id, value)
+                    }
+                  >
+                    <SelectTrigger className="w-full bg-white">
+                      <SelectValue placeholder="Seleccionar estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {estadosOrden.map((e) => (
+                        <SelectItem key={e.nombre} value={e.nombre}>
+                          {e.nombre}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="Cancelado">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Detalles del Pedido */}
           <div className="bg-gray-50 p-4 rounded-lg">

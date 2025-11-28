@@ -12,7 +12,7 @@ export default function LoginView({ onLogin }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onLogin();
+    onLogin(email, password);
   };
 
   return (

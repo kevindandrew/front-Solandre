@@ -65,28 +65,6 @@ export function useIngredientes() {
     return false;
   };
 
-  const deleteIngrediente = async (ingredienteId) => {
-    if (!confirm("¿Estás seguro de eliminar este ingrediente?")) return false;
-    const result = await fetchData(
-      `/admin/ingredientes/${ingredienteId}`,
-      "DELETE"
-    );
-    if (result.success) {
-      toast({
-        title: "Éxito",
-        description: "Ingrediente eliminado correctamente",
-      });
-      fetchIngredientes();
-      return true;
-    }
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: result.error,
-    });
-    return false;
-  };
-
   useEffect(() => {
     fetchIngredientes();
   }, []);
@@ -96,7 +74,6 @@ export function useIngredientes() {
     loading,
     createIngrediente,
     updateIngrediente,
-    deleteIngrediente,
     refetch: fetchIngredientes,
   };
 }

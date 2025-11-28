@@ -1,5 +1,7 @@
 "use client";
 
+"use client";
+
 import { useState, Suspense, useEffect } from "react";
 import { Search, Plus, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -11,23 +13,18 @@ import IngredienteFormModal from "./_components/IngredienteFormModal";
 import { useIngredientes } from "./_components/hooks/useIngredientes";
 
 export default function InventarioPage() {
-  const {
-    ingredientes,
-    loading,
-    createIngrediente,
-    updateIngrediente,
-    deleteIngrediente,
-  } = useIngredientes();
+  const { ingredientes, loading, createIngrediente, updateIngrediente } =
+    useIngredientes();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentIngredienteId, setCurrentIngredienteId] = useState(null);
   const [lowStockItems, setLowStockItems] = useState([]);
+
   const [formData, setFormData] = useState({
     nombre: "",
     stock_actual: 0,
-    unidad: "kg",
   });
 
   // Detectar ingredientes con stock bajo
@@ -51,9 +48,8 @@ export default function InventarioPage() {
         ? {
             nombre: ingrediente.nombre,
             stock_actual: parseFloat(ingrediente.stock_actual),
-            unidad: ingrediente.unidad || "kg",
           }
-        : { nombre: "", stock_actual: 0, unidad: "kg" }
+        : { nombre: "", stock_actual: 0 }
     );
     setIsModalOpen(true);
   };
@@ -86,8 +82,7 @@ export default function InventarioPage() {
       key: "stock_actual",
       render: (ingrediente) => (
         <span className="font-semibold">
-          {parseFloat(ingrediente.stock_actual).toFixed(2)}{" "}
-          {ingrediente.unidad || "kg"}
+          {parseFloat(ingrediente.stock_actual).toFixed(2)}
         </span>
       ),
     },
@@ -157,7 +152,7 @@ export default function InventarioPage() {
                     >
                       <span className="font-medium">{item.nombre}</span>
                       <Badge variant="destructive" className="ml-2">
-                        {parseFloat(item.stock_actual).toFixed(2)} {item.unidad}
+                        {parseFloat(item.stock_actual).toFixed(2)}
                       </Badge>
                     </div>
                   ))}
@@ -200,9 +195,6 @@ export default function InventarioPage() {
               columns={ingredientesColumns}
               onView={(ingrediente) => openModal(ingrediente, true, false)}
               onEdit={(ingrediente) => openModal(ingrediente, false, true)}
-              onDelete={(ingrediente) =>
-                deleteIngrediente(ingrediente.ingrediente_id)
-              }
               emptyMessage="No hay ingredientes registrados"
             />
           </div>

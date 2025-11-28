@@ -38,10 +38,8 @@ export function useEmpleadosActions(refetch) {
       rol_id: formData.rol_id,
     };
 
-    // Solo agregar password si se proporcionó uno nuevo
-    if (formData.password && formData.password.trim() !== "") {
-      payload.password = formData.password;
-    }
+    // La contraseña es obligatoria por validación del backend
+    payload.password = formData.password;
 
     // Solo agregar zona_reparto_id si el rol es Delivery (rol_id = 3)
     if (formData.rol_id === 3 && formData.zona_reparto_id) {
@@ -55,6 +53,13 @@ export function useEmpleadosActions(refetch) {
     );
 
     if (result.success) {
+      // Si es delivery y se especificó una zona, actualizar la zona también
+      if (formData.rol_id === 3 && formData.zona_reparto_id) {
+        await assignZona(empleadoId, {
+          zona_reparto_id: formData.zona_reparto_id,
+        });
+      }
+
       toast({
         title: "Éxito",
         description: "Empleado actualizado correctamente",

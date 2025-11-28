@@ -21,8 +21,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import CreateZonaModal from "./CreateZonaModal";
+import ManageZonasModal from "./ManageZonasModal";
 
 export default function EmpleadoFormModal({
+  // Force re-compile
   isOpen,
   onClose,
   onSubmit,
@@ -34,6 +36,7 @@ export default function EmpleadoFormModal({
   isEdit = false,
 }) {
   const [showCreateZona, setShowCreateZona] = useState(false);
+  const [showManageZonas, setShowManageZonas] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState("");
 
@@ -94,7 +97,7 @@ export default function EmpleadoFormModal({
                 </Label>
                 <Input
                   id="nombre_completo"
-                  value={formData.nombre_completo}
+                  value={formData.nombre_completo || ""}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -113,7 +116,7 @@ export default function EmpleadoFormModal({
                 <Input
                   id="email"
                   type="email"
-                  value={formData.email}
+                  value={formData.email || ""}
                   onChange={handleEmailChange}
                   placeholder="ejemplo@correo.com"
                   className={`text-gray-700 ${
@@ -131,7 +134,7 @@ export default function EmpleadoFormModal({
                 </Label>
                 <Input
                   id="telefono"
-                  value={formData.telefono}
+                  value={formData.telefono || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, telefono: e.target.value })
                   }
@@ -141,21 +144,19 @@ export default function EmpleadoFormModal({
                 />
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-gray-600">
-                    {isEdit ? "Nueva Contraseña (opcional)" : "Contraseña"}
+                    Contraseña (Requerido para actualizar)
                   </Label>
                   <div className="relative">
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      value={formData.password}
+                      value={formData.password || ""}
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
-                      placeholder={
-                        isEdit ? "Dejar vacío para no cambiar" : "••••••••"
-                      }
+                      placeholder="Ingrese contraseña"
                       className="text-gray-700 pr-10"
-                      required={!isEdit}
+                      required
                     />
                     <button
                       type="button"
@@ -197,16 +198,27 @@ export default function EmpleadoFormModal({
                     <Label htmlFor="zona" className="text-gray-600">
                       Zona de Reparto
                     </Label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowCreateZona(true)}
-                      className="h-7 text-xs"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Nueva Zona
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowManageZonas(true)}
+                        className="h-7 text-xs"
+                      >
+                        Gestionar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowCreateZona(true)}
+                        className="h-7 text-xs"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Nueva
+                      </Button>
+                    </div>
                   </div>
                   <Select
                     value={
@@ -256,6 +268,12 @@ export default function EmpleadoFormModal({
         isOpen={showCreateZona}
         onClose={() => setShowCreateZona(false)}
         onZonaCreated={handleZonaCreated}
+      />
+      <ManageZonasModal
+        isOpen={showManageZonas}
+        onClose={() => setShowManageZonas(false)}
+        zonas={zonas}
+        onRefreshZonas={onRefreshZonas}
       />
     </Dialog>
   );

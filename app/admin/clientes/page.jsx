@@ -10,68 +10,13 @@ import { useClientes } from "./_components/hooks/useClientes";
 
 const GenericTable = lazy(() => import("@/components/shared/GenericTable"));
 const HistorialModal = lazy(() => import("./_components/HistorialModal"));
-const ClienteFormModal = lazy(() => import("./_components/ClienteFormModal"));
 
 export default function ClientesPage() {
-  const {
-    clientes,
-    fetchHistorial,
-    createCliente,
-    updateCliente,
-    deleteCliente,
-  } = useClientes();
+  const { clientes, fetchHistorial } = useClientes();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [historial, setHistorial] = useState([]);
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
-  const [isViewMode, setIsViewMode] = useState(false);
-  const [isEdit, setIsEdit] = useState(false);
-  const [currentClienteId, setCurrentClienteId] = useState(null);
-  const [formData, setFormData] = useState({
-    nombre_completo: "",
-    email: "",
-    telefono: "",
-    password: "",
-  });
-
-  const openFormModal = (
-    cliente = null,
-    viewMode = false,
-    editMode = false
-  ) => {
-    setIsViewMode(viewMode);
-    setIsEdit(editMode);
-    setCurrentClienteId(cliente?.usuario_id || null);
-    setFormData(
-      cliente
-        ? {
-            nombre_completo: cliente.nombre_completo,
-            email: cliente.email,
-            telefono: cliente.telefono || "",
-            password: "",
-          }
-        : { nombre_completo: "", email: "", telefono: "", password: "" }
-    );
-    setIsFormModalOpen(true);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const dataToSend = { ...formData };
-    if (isEdit) delete dataToSend.password;
-
-    const success = isEdit
-      ? await updateCliente(currentClienteId, dataToSend)
-      : await createCliente(dataToSend);
-    if (success) setIsFormModalOpen(false);
-  };
-
-  const handleDelete = async (cliente) => {
-    if (confirm(`¿Eliminar cliente ${cliente.nombre_completo}?`)) {
-      await deleteCliente(cliente.usuario_id);
-    }
-  };
 
   const handleViewHistorial = async (cliente) => {
     const data = await fetchHistorial(cliente.usuario_id);
@@ -124,16 +69,9 @@ export default function ClientesPage() {
         <div>
           <h1 className="text-3xl font-bold">Clientes</h1>
           <p className="text-gray-600 mt-2">
-            Gestiona los clientes registrados
+            Visualiza los clientes registrados y su historial
           </p>
         </div>
-        <Button
-          onClick={() => openFormModal()}
-          className="bg-orange-500 hover:bg-orange-600 text-white"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Cliente
-        </Button>
       </div>
 
       <div className="flex items-center gap-4">
@@ -155,12 +93,8 @@ export default function ClientesPage() {
           data={filteredClientes}
           columns={columns}
           onView={handleViewHistorial}
-          onEdit={(cliente) => openFormModal(cliente, false, true)}
-          onDelete={handleDelete}
           actions={{
             view: { icon: Eye, label: "Ver Historial" },
-            edit: { icon: Pencil, label: "Editar" },
-            delete: { icon: Trash2, label: "Eliminar" },
           }}
         />
       </Suspense>
@@ -171,18 +105,6 @@ export default function ClientesPage() {
           onClose={() => setIsModalOpen(false)}
           historial={historial}
           cliente={clienteSeleccionado}
-        />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <ClienteFormModal
-          isOpen={isFormModalOpen}
-          onClose={() => setIsFormModalOpen(false)}
-          onSubmit={handleSubmit}
-          formData={formData}
-          setFormData={setFormData}
-          isEdit={isEdit}
-          isViewMode={isViewMode}
         />
       </Suspense>
     </div>

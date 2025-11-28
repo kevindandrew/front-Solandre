@@ -62,41 +62,21 @@ export default function IngredienteFormModal({
             </div>
             <div className="space-y-2">
               <Label htmlFor="stock_actual">Stock Actual</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="stock_actual"
-                  type="number"
-                  step="0.01"
-                  value={formData.stock_actual || ""}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      stock_actual: parseFloat(e.target.value),
-                    })
-                  }
-                  placeholder="Ej: 50.00"
-                  disabled={isViewMode}
-                  required
-                  className="flex-1"
-                />
-                <Select
-                  value={formData.unidad || "kg"}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, unidad: value })
-                  }
-                  disabled={isViewMode}
-                >
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="Unidad" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="kg">Kilogramos</SelectItem>
-                    <SelectItem value="unidades">Unidades</SelectItem>
-                    <SelectItem value="litros">Litros</SelectItem>
-                    <SelectItem value="gramos">Gramos</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Input
+                id="stock_actual"
+                type="number"
+                step="0.01"
+                value={formData.stock_actual || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    stock_actual: parseFloat(e.target.value),
+                  })
+                }
+                placeholder="Ej: 50.00"
+                disabled={isViewMode}
+                required
+              />
             </div>
           </div>
           <DialogFooter>

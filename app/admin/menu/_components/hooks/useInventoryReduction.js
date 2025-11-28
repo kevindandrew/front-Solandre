@@ -52,28 +52,31 @@ export function useInventoryReduction() {
       }
 
       // 2. Agrupar ingredientes y calcular cantidad total necesaria
+      const cantidad = parseInt(cantidadMenus) || 0;
       const ingredientesAgrupados = {};
       ingredientesPorPlato.forEach((ing) => {
         const id = ing.ingrediente_id;
+        const cantidadIngrediente = parseFloat(ing.cantidad) || 0;
+
         if (!ingredientesAgrupados[id]) {
           ingredientesAgrupados[id] = {
             ingrediente_id: id,
             nombre: ing.ingrediente?.nombre || ing.nombre,
-            cantidadPorMenu: ing.cantidad,
+            cantidadPorMenu: cantidadIngrediente,
             unidad: ing.unidad,
-            totalNecesario: ing.cantidad * cantidadMenus,
+            totalNecesario: cantidadIngrediente * cantidad,
           };
         } else {
-          ingredientesAgrupados[id].cantidadPorMenu += ing.cantidad;
+          ingredientesAgrupados[id].cantidadPorMenu += cantidadIngrediente;
           ingredientesAgrupados[id].totalNecesario +=
-            ing.cantidad * cantidadMenus;
+            cantidadIngrediente * cantidad;
         }
       });
 
       // 3. Verificar stock disponible
       const lowStockWarnings = [];
       const inventarioResponse = await fetch(
-        "https://backend-solandre.onrender.com/inventario",
+        "https://backend-solandre.onrender.com/admin/ingredientes",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -106,7 +109,7 @@ export function useInventoryReduction() {
           continue;
         }
 
-        const stockDisponible = parseFloat(stockActual.stock_actual);
+        const stockDisponible = parseFloat(stockActual.stock_actual) || 0;
         const stockNecesario = ing.totalNecesario;
 
         if (stockDisponible < stockNecesario) {
@@ -119,11 +122,18 @@ export function useInventoryReduction() {
             severity: "error",
           });
         } else {
-          const nuevoStock = stockDisponible - stockNecesario;
+          let nuevoStock = stockDisponible - stockNecesario;
+          if (isNaN(nuevoStock)) {
+            console.error(
+              `Error de cálculo de stock para ingrediente ${id}: ${stockDisponible} - ${stockNecesario}`
+            );
+            nuevoStock = stockDisponible; // Fallback to avoid corruption
+          }
           updates.push({
             ingrediente_id: id,
             stock_actual: nuevoStock,
             unidad: stockActual.unidad,
+            nombre: ing.nombre,
           });
 
           // Advertir si el nuevo stock quedará bajo
@@ -148,9 +158,10 @@ export function useInventoryReduction() {
       }
 
       // 4. Actualizar el inventario
+      let allUpdatesSuccessful = true;
       for (const update of updates) {
         const updateResponse = await fetch(
-          `https://backend-solandre.onrender.com/inventario/${update.ingrediente_id}`,
+          `https://backend-solandre.onrender.com/admin/ingredientes/${update.ingrediente_id}`,
           {
             method: "PUT",
             headers: {
@@ -158,14 +169,24 @@ export function useInventoryReduction() {
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              stock_actual: update.stock_actual,
-              unidad: update.unidad,
+              stock_actual: parseFloat(update.stock_actual.toFixed(2)),
+              nombre: update.nombre,
             }),
           }
         );
+
+        if (!updateResponse.ok) {
+          const errorText = await updateResponse.text();
+          console.error(
+            `Error updating ingredient ${update.ingrediente_id}:`,
+            updateResponse.status,
+            errorText
+          );
+          allUpdatesSuccessful = false;
+        }
       }
 
-      return { success: true, lowStockWarnings };
+      return { success: allUpdatesSuccessful, lowStockWarnings };
     } catch (error) {
       console.error("Error al reducir inventario:", error);
       toast({

@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePedidos } from "./_components/hooks/usePedidos";
+import { useEmpleados } from "../empleados/_components/hooks/useEmpleados";
 import TrackingModal from "./_components/TrackingModal";
 
 const ESTADOS_COLORES = {
@@ -29,13 +30,23 @@ const ESTADOS_COLORES = {
 };
 
 export default function PedidosPage() {
-  const { pedidos, confirmarPedido, cancelarPedido } = usePedidos();
+  const {
+    pedidos,
+    confirmarPedido,
+    cancelarPedido,
+    reasignarDelivery,
+    cambiarEstado,
+  } = usePedidos();
+  const { empleados } = useEmpleados();
   const [pedidosFiltrados, setPedidosFiltrados] = useState([]);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(
     new Date().toISOString().split("T")[0]
   );
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
+
+  // Filtrar solo los empleados con rol de Delivery (3)
+  const deliveries = empleados.filter((e) => e.rol_id === 3);
 
   useEffect(() => {
     // Filtrar pedidos por la fecha seleccionada
@@ -72,6 +83,26 @@ export default function PedidosPage() {
   };
 
   const esHoy = fechaSeleccionada === new Date().toISOString().split("T")[0];
+
+  const getFechaDisplay = (pedido) => {
+    let fecha = pedido.fecha_pedido;
+    switch (pedido.estado) {
+      case "Confirmado":
+      case "En Cocina":
+        fecha = pedido.fecha_confirmado;
+        break;
+      case "Listo para Entrega":
+        fecha = pedido.fecha_listo_cocina;
+        break;
+      case "En Reparto":
+        fecha = pedido.fecha_en_reparto;
+        break;
+      case "Entregado":
+        fecha = pedido.fecha_entrega;
+        break;
+    }
+    return fecha || pedido.fecha_pedido;
+  };
 
   return (
     <div className="space-y-6">
@@ -150,10 +181,14 @@ export default function PedidosPage() {
                 </div>
                 <p className="text-white text-sm mt-1">
                   <Clock className="inline h-3 w-3 mr-1" />
-                  {new Date(pedido.fecha_pedido).toLocaleTimeString("es-ES", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {new Date(getFechaDisplay(pedido)).toLocaleTimeString(
+                    "es-BO",
+                    {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      timeZone: "America/La_Paz",
+                    }
+                  )}
                 </p>
               </div>
 
@@ -280,6 +315,9 @@ export default function PedidosPage() {
         pedido={pedidoSeleccionado}
         isOpen={isTrackingOpen}
         onClose={() => setIsTrackingOpen(false)}
+        deliveries={deliveries}
+        onReasignar={reasignarDelivery}
+        onCambiarEstado={cambiarEstado}
       />
     </div>
   );

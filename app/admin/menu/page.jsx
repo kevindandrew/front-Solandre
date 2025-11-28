@@ -6,11 +6,13 @@ import MenuWeekView from "./_components/MenuWeekView";
 import MenuFormModal from "./_components/MenuFormModal";
 import { useMenu, usePlatos } from "./_components/hooks/useMenu";
 import { useMenuActions } from "./_components/hooks/useMenuActions";
+import { useToast } from "@/hooks/use-toast";
 
 export default function MenuPage() {
   const { menus, loading: loadingMenus, refetch: refetchMenus } = useMenu();
   const { platos, loading: loadingPlatos } = usePlatos();
   const { createMenu, updateMenu, deleteMenu } = useMenuActions(refetchMenus);
+  const { toast } = useToast();
 
   const [weekOffset, setWeekOffset] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -86,10 +88,14 @@ export default function MenuPage() {
     setIsEdit(false);
     setCurrentMenuId(null);
     // Format date as YYYY-MM-DD if it's a Date object
-    const formattedDate =
-      prefilledDate instanceof Date
-        ? prefilledDate.toISOString().split("T")[0]
-        : prefilledDate || "";
+    let formattedDate = "";
+    if (prefilledDate) {
+      const dateObj =
+        prefilledDate instanceof Date ? prefilledDate : new Date(prefilledDate);
+      if (!isNaN(dateObj.getTime())) {
+        formattedDate = dateObj.toISOString().split("T")[0];
+      }
+    }
     setFormData({
       fecha: formattedDate,
       plato_principal_id: null,
@@ -107,7 +113,7 @@ export default function MenuPage() {
     setIsEdit(true);
     setCurrentMenuId(menu.menu_dia_id);
     setFormData({
-      fecha: menu.fecha,
+      fecha: menu.fecha ? new Date(menu.fecha).toISOString().split("T")[0] : "",
       plato_principal_id: menu.plato_principal_id,
       bebida_id: menu.bebida_id || "none",
       postre_id: menu.postre_id || "none",
@@ -140,6 +146,44 @@ export default function MenuPage() {
           ? null
           : parseInt(formData.postre_id),
     };
+
+    if (!menuData.plato_principal_id) {
+      toast({
+        variant: "destructive",
+        title: "Error de validación",
+        description: "Debes seleccionar un plato principal",
+      });
+      return;
+    }
+
+    if (menuData.precio_menu <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Error de validación",
+        description: "El precio del menú debe ser mayor a 0",
+      });
+      return;
+    }
+
+    if (menuData.cantidad_disponible <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Error de validación",
+        description: "La cantidad disponible debe ser mayor a 0",
+      });
+      return;
+    }
+
+    if (!menuData.fecha) {
+      toast({
+        variant: "destructive",
+        title: "Error de validación",
+        description: "La fecha es requerida",
+      });
+      return;
+    }
+
+    console.log("Submitting menu data:", menuData);
 
     let success = false;
     if (isEdit && currentMenuId) {

@@ -41,7 +41,9 @@ export const useFetch = () => {
           try {
             const errorData = await response.json();
             errorMessage =
-              errorData.detail || errorData.message || errorMessage;
+              typeof errorData.detail === "object"
+                ? JSON.stringify(errorData.detail)
+                : errorData.detail || errorData.message || errorMessage;
           } catch {
             errorMessage = `Error ${response.status}: ${response.statusText}`;
           }

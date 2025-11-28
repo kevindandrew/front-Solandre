@@ -64,7 +64,7 @@ export function usePedidos() {
     const result = await fetchData(
       `/admin/pedidos/${pedidoId}/reasignar`,
       "PATCH",
-      { delivery_id: deliveryId }
+      { nuevo_delivery_id: deliveryId }
     );
 
     if (result.success) {
@@ -110,6 +110,7 @@ export function usePedidos() {
   };
 
   const cambiarEstado = async (pedidoId, nuevoEstado) => {
+    // Intentamos usar el endpoint de admin para forzar cambios
     const result = await fetchData(
       `/admin/pedidos/${pedidoId}/estado`,
       "PATCH",

@@ -52,7 +52,7 @@ export default function ReportesPage() {
     // Calcular estadísticas
     const totalVentas = filtrados
       .filter((p) => p.estado === "Entregado")
-      .reduce((sum, p) => sum + (p.total || 0), 0);
+      .reduce((sum, p) => sum + parseFloat(p.total_pedido || 0), 0);
 
     const entregados = filtrados.filter((p) => p.estado === "Entregado").length;
     const cancelados = filtrados.filter((p) => p.estado === "Cancelado").length;
@@ -108,7 +108,7 @@ export default function ReportesPage() {
       key: "total",
       render: (item) => (
         <span className="font-semibold text-green-600">
-          Bs. {item.total?.toFixed(2) || "0.00"}
+          Bs. {parseFloat(item.total_pedido || 0).toFixed(2)}
         </span>
       ),
     },

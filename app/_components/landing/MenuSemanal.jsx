@@ -75,13 +75,21 @@ export default function MenuSemanal() {
       // Calcular la semana actual primero
       const today = new Date();
       const currentDay = today.getDay();
+
+      // Si es sábado (6) o domingo (0), mostrar la próxima semana
+      if (currentDay === 6 || currentDay === 0) {
+        const daysToAdd = currentDay === 6 ? 2 : 1;
+        today.setDate(today.getDate() + daysToAdd);
+      }
+
+      // Recalcular el día actual después del ajuste (será lunes = 1)
+      const adjustedDay = today.getDay();
       const monday = new Date(today);
 
-      // Calcular el lunes de esta semana
-      const daysFromMonday = currentDay === 0 ? -6 : 1 - currentDay;
+      // Calcular el lunes de esta semana (o la próxima si ya ajustamos)
+      const daysFromMonday = adjustedDay === 0 ? -6 : 1 - adjustedDay;
       monday.setDate(today.getDate() + daysFromMonday);
       monday.setHours(0, 0, 0, 0);
-
       // Calcular el viernes de esta semana
       const friday = new Date(monday);
       friday.setDate(monday.getDate() + 4);
@@ -116,6 +124,20 @@ export default function MenuSemanal() {
               const platoCompleto = platosMap[menu.plato_principal.plato_id];
               if (platoCompleto && platoCompleto.imagen_url) {
                 menu.plato_principal.imagen_url = platoCompleto.imagen_url;
+              }
+            }
+            // Enriquecer bebida
+            if (menu.bebida && menu.bebida.plato_id) {
+              const platoCompleto = platosMap[menu.bebida.plato_id];
+              if (platoCompleto && platoCompleto.imagen_url) {
+                menu.bebida.imagen_url = platoCompleto.imagen_url;
+              }
+            }
+            // Enriquecer postre
+            if (menu.postre && menu.postre.plato_id) {
+              const platoCompleto = platosMap[menu.postre.plato_id];
+              if (platoCompleto && platoCompleto.imagen_url) {
+                menu.postre.imagen_url = platoCompleto.imagen_url;
               }
             }
           });
@@ -158,7 +180,7 @@ export default function MenuSemanal() {
       setIsLoginOpen(true);
     } else {
       router.push(
-        `/cliente/reservas?menu_id=${menu.menu_id}&fecha=${menu.fecha}`
+        `/cliente/reservas?menu_id=${menu.menu_dia_id}&fecha=${menu.fecha}`
       );
     }
   };
@@ -219,7 +241,7 @@ export default function MenuSemanal() {
             {/* Desktop View - Grid */}
             <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               {menuSemanal.map((menu) => {
-                const dayDate = new Date(menu.fecha);
+                const dayDate = new Date(menu.fecha + "T00:00:00");
                 const dayIndex = menu.dayIndex; // Usar el índice precalculado
 
                 const colors = dayColors[dayIndex] || dayColors[0];
@@ -227,6 +249,10 @@ export default function MenuSemanal() {
                   "es-BO",
                   { month: "short" }
                 )}`;
+
+                // Calcular si es día pasado
+                const todayStr = new Date().toLocaleDateString("en-CA");
+                const isPast = menu.fecha < todayStr;
 
                 // Si no hay menú para este día, mostrar card vacía
                 if (!menu.hasMenu) {
@@ -264,7 +290,17 @@ export default function MenuSemanal() {
                 return (
                   <Card
                     key={menu.menu_dia_id || menu.fecha}
-                    className={`hover:shadow-xl transition-all duration-300 overflow-hidden ${colors.border} border-2 ${colors.bg}`}
+                    onClick={() => !isPast && handleOpenDetail(menu)}
+                    className={`
+                      ${colors.border} border-2 ${
+                      colors.bg
+                    } overflow-hidden transition-all duration-300
+                      ${
+                        isPast
+                          ? "opacity-50 grayscale cursor-not-allowed"
+                          : "hover:shadow-xl cursor-pointer hover:scale-[1.02]"
+                      }
+                    `}
                   >
                     {/* Header con día */}
                     <div className={`${colors.header} p-3 text-center`}>
@@ -338,17 +374,18 @@ export default function MenuSemanal() {
                         </p>
                       )}
 
-                      {/* Precio y botón */}
+                      {/* Precio */}
                       <div className="flex items-center justify-between pt-2 border-t">
                         <p className={`text-2xl font-bold ${colors.text}`}>
                           Bs. {menu.precio_menu}
                         </p>
-                        <Button
-                          onClick={() => handleOpenDetail(menu)}
-                          className={`${colors.header} hover:opacity-90 text-white rounded-full w-10 h-10 p-0`}
-                        >
-                          <Plus size={20} />
-                        </Button>
+                        {!isPast && (
+                          <div
+                            className={`${colors.header} text-white rounded-full w-8 h-8 flex items-center justify-center`}
+                          >
+                            <Plus size={16} />
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -364,8 +401,10 @@ export default function MenuSemanal() {
                   style={{ transform: `translateX(-${currentIndex * 100}%)` }}
                 >
                   {menuSemanal.map((menu) => {
-                    const dayDate = new Date(menu.fecha);
+                    const dayDate = new Date(menu.fecha + "T00:00:00");
                     const dayIndex = menu.dayIndex;
+                    const todayStr = new Date().toLocaleDateString("en-CA");
+                    const isPast = menu.fecha < todayStr;
 
                     const colors = dayColors[dayIndex] || dayColors[0];
                     const formattedDate = `${dayDate.getDate()}/${dayDate.toLocaleDateString(
@@ -413,7 +452,17 @@ export default function MenuSemanal() {
                         className="w-full shrink-0 px-4"
                       >
                         <Card
-                          className={`overflow:hidden ${colors.border} border-2 ${colors.bg}`}
+                          onClick={() => !isPast && handleOpenDetail(menu)}
+                          className={`
+                            ${colors.border} border-2 ${
+                            colors.bg
+                          } overflow-hidden transition-all duration-300
+                            ${
+                              isPast
+                                ? "opacity-50 grayscale cursor-not-allowed"
+                                : "active:scale-95 cursor-pointer"
+                            }
+                          `}
                         >
                           {/* Header con día */}
                           <div className={`${colors.header} p-4 text-center`}>
@@ -489,19 +538,20 @@ export default function MenuSemanal() {
                               </p>
                             )}
 
-                            {/* Precio y botón */}
+                            {/* Precio */}
                             <div className="flex items-center justify-between pt-4 border-t">
                               <p
                                 className={`text-3xl font-bold ${colors.text}`}
                               >
                                 Bs. {menu.precio_menu}
                               </p>
-                              <Button
-                                onClick={() => handleOpenDetail(menu)}
-                                className={`${colors.header} hover:opacity-90 text-white rounded-full w-12 h-12 p-0`}
-                              >
-                                <Plus size={24} />
-                              </Button>
+                              {!isPast && (
+                                <div
+                                  className={`${colors.header} text-white rounded-full w-10 h-10 flex items-center justify-center`}
+                                >
+                                  <Plus size={20} />
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -546,17 +596,6 @@ export default function MenuSemanal() {
             </div>
           </>
         )}
-
-        {/* CTA */}
-        <div className="text-center mt-12">
-          <Button
-            size="lg"
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold"
-            onClick={() => handleReservar(menuSemanal[0])}
-          >
-            ¡Ordena Ahora!
-          </Button>
-        </div>
       </div>
 
       {/* Auth Modal */}
@@ -570,7 +609,7 @@ export default function MenuSemanal() {
               setIsLoginOpen(false);
               if (selectedMenu && Cookies.get("token")) {
                 router.push(
-                  `/cliente/reservas?menu_id=${selectedMenu.menu_id}&fecha=${selectedMenu.fecha}`
+                  `/cliente/reservas?menu_id=${selectedMenu.menu_dia_id}&fecha=${selectedMenu.fecha}`
                 );
               }
             }}
@@ -591,7 +630,10 @@ export default function MenuSemanal() {
 
               {/* Botón de confirmar orden flotante */}
               <div className="absolute bottom-4 right-4 z-10">
-                <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 font-semibold transition-all">
+                <button
+                  onClick={() => handleReservar(selectedMenuDetail)}
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 font-semibold transition-all"
+                >
                   <span>Confirma tu orden</span>
                   <span className="bg-white text-green-600 rounded-full w-8 h-8 flex items-center justify-center text-xl">
                     →

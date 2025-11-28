@@ -62,9 +62,20 @@ export function useMenuActions(refetch) {
           });
         }
       }
+
+      if (!inventoryResult.success) {
+        toast({
+          variant: "destructive",
+          title: "Error de Inventario",
+          description:
+            "No se pudo actualizar el inventario. El menú no fue creado.",
+        });
+        return false;
+      }
     }
 
     // Crear el menú
+    console.log("Sending create menu payload:", menuData);
     const result = await fetchData("/admin/menu", "POST", menuData);
 
     if (result.success) {
@@ -78,7 +89,10 @@ export function useMenuActions(refetch) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: result.error || "No se pudo crear el menú",
+        description:
+          typeof result.error === "object"
+            ? JSON.stringify(result.error)
+            : result.error || "No se pudo crear el menú",
       });
       return false;
     }
@@ -145,10 +159,14 @@ export function useMenuActions(refetch) {
       refetch();
       return true;
     } else {
+      console.error("Error deleting menu:", result.error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: result.error || "No se pudo eliminar el menú",
+        description:
+          typeof result.error === "object"
+            ? JSON.stringify(result.error)
+            : result.error || "No se pudo eliminar el menú",
       });
       return false;
     }
