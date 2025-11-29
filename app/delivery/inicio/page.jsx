@@ -23,6 +23,19 @@ import {
   User,
 } from "lucide-react";
 import { useDelivery } from "../_components/hooks/useDelivery";
+import dynamic from "next/dynamic";
+
+const LocationViewer = dynamic(
+  () => import("../../admin/pedidos/_components/LocationViewer"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full bg-gray-100 animate-pulse flex items-center justify-center text-gray-400">
+        Cargando mapa...
+      </div>
+    ),
+  }
+);
 
 export default function DeliveryDashboard() {
   const { entregas, loading, fetchMisEntregas, tomarPedido, finalizarPedido } =
@@ -142,19 +155,36 @@ export default function DeliveryDashboard() {
                       )}
                       {(pedido.latitud && pedido.longitud) ||
                       pedido.google_maps_link ? (
-                        <a
-                          href={
-                            pedido.latitud && pedido.longitud
-                              ? `https://www.google.com/maps/search/?api=1&query=${pedido.latitud},${pedido.longitud}`
-                              : pedido.google_maps_link
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          <Navigation className="h-4 w-4" />
-                          Ver en Google Maps
-                        </a>
+                        <div className="mt-3">
+                          {pedido.latitud && pedido.longitud ? (
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${pedido.latitud},${pedido.longitud}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block h-40 w-full rounded-md overflow-hidden border border-gray-200 relative group"
+                              title="Clic para abrir en Google Maps"
+                            >
+                              <LocationViewer
+                                lat={pedido.latitud}
+                                lng={pedido.longitud}
+                              />
+                              <div className="absolute bottom-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-medium text-blue-600 shadow-sm flex items-center gap-1 z-[400] group-hover:bg-blue-50 transition-colors">
+                                <Navigation className="h-3 w-3" />
+                                Abrir GPS
+                              </div>
+                            </a>
+                          ) : (
+                            <a
+                              href={pedido.google_maps_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                            >
+                              <Navigation className="h-4 w-4" />
+                              Ver en Google Maps
+                            </a>
+                          )}
+                        </div>
                       ) : null}
                     </div>
                   </div>
