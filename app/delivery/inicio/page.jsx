@@ -197,7 +197,10 @@ export default function DeliveryDashboard() {
                       Total a Cobrar:
                     </span>
                     <span className="text-lg font-bold text-gray-900">
-                      Bs. {(pedido.total || 0).toFixed(2)}
+                      Bs.{" "}
+                      {parseFloat(
+                        pedido.total_pedido || pedido.total || 0
+                      ).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
@@ -270,7 +273,9 @@ export default function DeliveryDashboard() {
                             className="text-sm font-medium text-yellow-800 cursor-pointer"
                           >
                             Confirmar cobro de Bs.{" "}
-                            {(pedido.total || 0).toFixed(2)}
+                            {parseFloat(
+                              pedido.total_pedido || pedido.total || 0
+                            ).toFixed(2)}
                           </Label>
                         </div>
                       )}
